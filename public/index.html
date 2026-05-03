@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cyan: #00e5ff;
+    --blue: #4fc3f7;
+    --dark: #020008;
+    --panel: rgba(2, 0, 20, 0.82);
+  }
+
+  body {
+    background: var(--dark);
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: linear-gradient(to bottom, rgba(2,0,8,0.95) 0%, transparent 100%);
+    flex-shrink: 0;
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    animation: float 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,1)) drop-shadow(0 0 20px rgba(0,180,255,0.7));
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #4fc3f7, #00e5ff, #80deea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(79,195,247,0.45);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .topbar-stats { display: flex; gap: 28px; align-items: center; }
+
+  .stat { text-align: center; }
+  .stat-val {
+    font-size: 17px;
+    color: var(--cyan);
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(0,229,255,0.6);
+  }
+  .stat-label {
+    font-size: 9px;
+    color: rgba(79,195,247,0.4);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 32px 20px 32px;
+    overflow: hidden;
+  }
+
+  /* CHAT PANEL */
+  .chat-panel {
+    width: 560px;
+    height: 100%;
+    max-height: calc(100vh - 140px);
+    background: var(--panel);
+    border: 1px solid rgba(79,195,247,0.18);
+    border-radius: 20px;
+    backdrop-filter: blur(24px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 80px rgba(0,229,255,0.07), inset 0 0 40px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(79,195,247,0.12);
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0055cc, #00e5ff);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px rgba(0,229,255,0.45);
+    animation: avatar-glow 3s ease-in-out infinite;
+    flex-shrink: 0;
+    padding: 8px;
+  }
+
+  .header-info h3 {
+    font-size: 13px;
+    color: #e0f7fa;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--blue);
+    opacity: 0.6;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .online-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #00e676;
+    box-shadow: 0 0 8px #00e676;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  /* MESSAGES */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(79,195,247,0.2); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: msg-in 0.35s ease forwards;
+  }
+
+  .msg-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.45;
+    color: #b0bec5;
+    padding: 0 4px;
+  }
+
+  .msg-bubble {
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    line-height: 1.7;
+    letter-spacing: 0.2px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg.user { align-items: flex-end; }
+  .msg.user .msg-bubble {
+    background: rgba(79,195,247,0.1);
+    border: 1px solid rgba(79,195,247,0.22);
+    color: #b2ebf2;
+    max-width: 88%;
+  }
+
+  .msg.ai { align-items: flex-start; }
+  .msg.ai .msg-bubble {
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.14);
+    color: #e0f7fa;
+    max-width: 97%;
+  }
+
+  /* Typing indicator */
+  .typing-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+
+  .typing-bubble {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 11px 16px;
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.14);
+    border-radius: 14px;
+  }
+
+  .typing-bubble span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--blue);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Welcome message */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 12px;
+    opacity: 0.5;
+    text-align: center;
+  }
+
+  .welcome-icon { font-size: 36px; filter: drop-shadow(0 0 15px rgba(0,229,255,0.6)); }
+  .welcome-text { font-size: 15px; color: var(--blue); letter-spacing: 2px; line-height: 1.8; }
+
+  /* INPUT */
+  .chat-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(79,195,247,0.1);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .input-wrap { flex: 1; position: relative; }
+
+  textarea {
+    width: 100%;
+    background: rgba(79,195,247,0.05);
+    border: 1px solid rgba(79,195,247,0.18);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #b2ebf2;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    letter-spacing: 0.3px;
+    resize: none;
+    max-height: 120px;
+    min-height: 42px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: rgba(79,195,247,0.4); }
+  textarea::placeholder { color: rgba(79,195,247,0.28); }
+
+  .send-btn {
+    background: linear-gradient(135deg, #0055cc, #00e5ff);
+    border: none;
+    border-radius: 12px;
+    width: 42px; height: 42px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 20px rgba(0,229,255,0.3);
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .send-btn:hover { transform: scale(1.08); box-shadow: 0 0 30px rgba(0,229,255,0.5); }
+  .send-btn:active { transform: scale(0.96); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* BOTTOM BAR */
+  .bottombar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 10px 32px 14px;
+    background: linear-gradient(to top, rgba(2,0,8,0.9) 0%, transparent 100%);
+    flex-shrink: 0;
+  }
+
+  .tag {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(79,195,247,0.3);
+    text-transform: uppercase;
+  }
+
+  /* BRAIN label (left side) */
+  .brain-area {
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .brain-title {
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--blue);
+    text-transform: uppercase;
+    opacity: 0.6;
+    animation: pulse-text 3s ease-in-out infinite;
+  }
+
+  .brain-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    color: #80deea;
+    letter-spacing: 3px;
+    opacity: 0.4;
+  }
+
+  .pulse-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  /* ANIMATIONS */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes avatar-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,229,255,0.45); }
+    50% { box-shadow: 0 0 35px rgba(0,229,255,0.75); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.15; }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+  }
+
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; text-shadow: 0 0 20px rgba(79,195,247,0.5); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="bolt-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="blur1"/>
+            <feGaussianBlur stdDeviation="5" result="blur2"/>
+            <feMerge><feMergeNode in="blur2"/><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <linearGradient id="bolt-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="40%" stop-color="#00e5ff"/>
+            <stop offset="100%" stop-color="#0077ff"/>
+          </linearGradient>
+        </defs>
+        <polygon points="21,2 10,20 17,20 15,34 26,16 19,16" fill="url(#bolt-grad)" filter="url(#bolt-glow)" opacity="0.95"/>
+        <polygon points="21,2 10,20 17,20 15,34 26,16 19,16" fill="white" opacity="0.25"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Atlas AI</div>
+      <div class="logo-sub">Neural Interface v1.0</div>
+    </div>
+  </div>
+  <div class="topbar-stats">
+    <div class="stat">
+      <div class="stat-val" id="node-count">80</div>
+      <div class="stat-label">Nodes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="conn-count">0</div>
+      <div class="stat-label">Connections</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="uptime">00:00</div>
+      <div class="stat-label">Uptime</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Brain label left -->
+  <div class="brain-area">
+    <div class="brain-title">Neural Network</div>
+    <div class="brain-status">
+      <div class="pulse-dot"></div>
+      <span>Processing</span>
+    </div>
+  </div>
+
+  <!-- Chat panel -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="avatar">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+          <defs>
+            <filter id="avatar-glow">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <polygon points="14,1 6,14 11,14 10,23 18,10 13,10" fill="white" filter="url(#avatar-glow)" opacity="0.95"/>
+        </svg>
+      </div>
+      <div class="header-info">
+        <h3>Atlas</h3>
+        <div class="online-badge">
+          <div class="online-dot"></div>
+          Online — Ready
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <defs>
+              <filter id="welcome-glow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="3" result="b1"/>
+                <feGaussianBlur stdDeviation="7" result="b2"/>
+                <feMerge><feMergeNode in="b2"/><feMergeNode in="b1"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <linearGradient id="wg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#00e5ff"/>
+                <stop offset="100%" stop-color="#0077ff"/>
+              </linearGradient>
+            </defs>
+            <polygon points="24,3 11,22 19,22 17,37 29,18 21,18" fill="url(#wg)" filter="url(#welcome-glow)"/>
+          </svg>
+        </div>
+        <div class="welcome-text">
+          Hey Brax.<br>
+          What do you need?
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-footer">
+      <div class="input-wrap">
+        <textarea
+          id="input"
+          placeholder="Ask me anything..."
+          rows="1"
+        ></textarea>
+      </div>
+      <button class="send-btn" id="send-btn" title="Send">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottombar">
+  <span class="tag">Conduit Electrical AI</span>
+  <span class="tag">•</span>
+  <span class="tag">Wasatch Front, Utah</span>
+  <span class="tag">•</span>
+  <span class="tag">Built by Brax</span>
+</div>
+
+<script>
+// ─── NEURAL NETWORK ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, nodes = [], mouse = { x: -9999, y: -9999 };
+const NODE_COUNT = 80, MAX_DIST = 155;
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', () => { resize(); initNodes(); });
+window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+resize();
+
+function rand(a, b) { return Math.random() * (b - a) + a; }
+function hsl(h, s, l, a = 1) { return `hsla(${h},${s}%,${l}%,${a})`; }
+
+function initNodes() {
+  nodes = [];
+  for (let i = 0; i < NODE_COUNT; i++) {
+    const angle = rand(0, Math.PI * 2);
+    const radius = rand(0, Math.min(W, H) * 0.36);
+    nodes.push({
+      x: W / 2 + Math.cos(angle) * radius,
+      y: H / 2 + Math.sin(angle) * radius,
+      vx: rand(-0.28, 0.28), vy: rand(-0.28, 0.28),
+      r: rand(2, 4.2),
+      hue: rand(185, 210),
+      pulse: rand(0, Math.PI * 2),
+      pulseSpeed: rand(0.012, 0.028),
+    });
+  }
+}
+initNodes();
+
+let frame = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const grd = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.min(W,H)*0.44);
+  grd.addColorStop(0, 'rgba(0,70,160,0.07)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  frame++;
+  let connCount = 0;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    const dx = a.x - mouse.x, dy = a.y - mouse.y;
+    const md = Math.sqrt(dx*dx + dy*dy);
+    if (md < 130) { a.vx += dx/md*0.28; a.vy += dy/md*0.28; }
+    a.vx -= (a.x - W/2) * 0.00007; a.vy -= (a.y - H/2) * 0.00007;
+    a.vx *= 0.98; a.vy *= 0.98;
+    a.x += a.vx; a.y += a.vy;
+    a.pulse += a.pulseSpeed;
+
+    for (let j = i+1; j < nodes.length; j++) {
+      const b = nodes[j];
+      const ex = a.x-b.x, ey = a.y-b.y;
+      const dist = Math.sqrt(ex*ex + ey*ey);
+      if (dist < MAX_DIST) {
+        connCount++;
+        const alpha = (1 - dist/MAX_DIST) * 0.52;
+        const hue = (a.hue+b.hue)/2;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = hsl(hue, 90, 70, alpha);
+        ctx.lineWidth = alpha * 1.1; ctx.stroke();
+        if (frame % 90 === i % 90) {
+          const t = (frame % 60) / 60;
+          ctx.beginPath(); ctx.arc(a.x+(b.x-a.x)*t, a.y+(b.y-a.y)*t, 2, 0, Math.PI*2);
+          ctx.fillStyle = hsl(hue, 100, 90, 0.9); ctx.fill();
+        }
+      }
+    }
+  }
+
+  for (const n of nodes) {
+    const glow = 0.7 + 0.3*Math.sin(n.pulse);
+    const r = n.r * glow;
+    const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*4);
+    g.addColorStop(0, hsl(n.hue,100,80,0.4*glow));
+    g.addColorStop(1, hsl(n.hue,100,70,0));
+    ctx.beginPath(); ctx.arc(n.x,n.y,r*4,0,Math.PI*2);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    ctx.fillStyle = hsl(n.hue,100,85,0.95); ctx.fill();
+  }
+
+  if (frame % 6 === 0) document.getElementById('conn-count').textContent = connCount;
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ─── UPTIME ───────────────────────────────────────────────────────────────────
+const t0 = Date.now();
+setInterval(() => {
+  const s = Math.floor((Date.now()-t0)/1000);
+  const m = Math.floor(s/60).toString().padStart(2,'0');
+  document.getElementById('uptime').textContent = `${m}:${(s%60).toString().padStart(2,'0')}`;
+}, 1000);
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+const messagesEl = document.getElementById('messages');
+const inputEl    = document.getElementById('input');
+const sendBtn    = document.getElementById('send-btn');
+const welcomeEl  = document.getElementById('welcome');
+let history = [];
+let busy = false;
+
+// Auto-resize textarea
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+function addMsg(role, text = '') {
+  if (welcomeEl) welcomeEl.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const label = role === 'user' ? 'Brax' : 'Atlas AI';
+  div.innerHTML = `<div class="msg-label">${label}</div><div class="msg-bubble"></div>`;
+  messagesEl.appendChild(div);
+  const bubble = div.querySelector('.msg-bubble');
+  if (text) bubble.textContent = text;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return bubble;
+}
+
+function addTyping() {
+  if (welcomeEl) welcomeEl.style.display = 'none';
+  const row = document.createElement('div');
+  row.className = 'typing-row';
+  row.innerHTML = `
+    <div class="msg-label">Atlas AI</div>
+    <div class="typing-bubble"><span></span><span></span><span></span></div>
+  `;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return row;
+}
+
+async function send() {
+  const text = inputEl.value.trim();
+  if (!text || busy) return;
+  busy = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+
+  const typingRow = addTyping();
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history }),
+    });
+
+    typingRow.remove();
+    const bubble = addMsg('ai');
+    let full = '';
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const evt = JSON.parse(line.slice(6));
+          if (evt.type === 'text') {
+            full += evt.text;
+            bubble.textContent = full;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+
+    history.push({ role: 'assistant', content: full });
+
+  } catch (err) {
+    typingRow.remove();
+    addMsg('ai', 'Connection error — is the server running?');
+    console.error(err);
+  }
+
+  busy = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+</script>
+</body>
+</html>

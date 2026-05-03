@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Widget Demo</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+  .card { background: white; border-radius: 16px; padding: 40px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+  h1 { font-size: 24px; color: #1e293b; margin-bottom: 8px; }
+  p { color: #64748b; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 16px; }
+  .badge { display: inline-block; background: #f0fdf4; border: 1px solid #86efac; color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">⚡ Atlas AI Widget Demo</div>
+  <h1>Your chatbot is running</h1>
+  <p>The AI chat widget should appear in the bottom-right corner of this page in a few seconds. This is exactly how it will look on your client's real website.</p>
+  <p class="note">This widget is loaded with a single line of code. Your client's web developer pastes it before &lt;/body&gt; — takes about 60 seconds.</p>
+</div>
+
+<script>
+  // Get business from URL param
+  const params = new URLSearchParams(window.location.search);
+  const bizId = params.get('business') || 'paradise-hvac';
+
+  const s = document.createElement('script');
+  s.src = '/widget.js';
+  s.setAttribute('data-business', bizId);
+  s.setAttribute('data-server', 'http://localhost:4242');
+  document.body.appendChild(s);
+</script>
+</body>
+</html>

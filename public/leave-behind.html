@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas AI Automation — One Pager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  /* PRINT */
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; }
+    .print-btn { display: none !important; }
+  }
+
+  .print-btn {
+    position: fixed;
+    top: 20px; right: 20px;
+    background: #111;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    z-index: 100;
+    transition: background 0.2s;
+  }
+  .print-btn:hover { background: #333; }
+
+  /* PAGE — letter size ratio */
+  .page {
+    width: 816px;
+    min-height: 1056px;
+    background: white;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #0a0a12;
+    padding: 40px 52px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,229,255,0.12), transparent 70%);
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(79,195,247,0.07), transparent 70%);
+  }
+
+  .header-left { position: relative; z-index: 1; }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .logo-bolt {
+    width: 44px; height: 44px;
+  }
+
+  .logo-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #ffffff, #00e5ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: rgba(79,195,247,0.55);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-left: 58px;
+  }
+
+  .header-right {
+    position: relative;
+    z-index: 1;
+    text-align: right;
+  }
+
+  .contact-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .contact-details {
+    font-size: 12px;
+    color: rgba(79,195,247,0.6);
+    line-height: 1.8;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── HERO STRIP ── */
+  .hero-strip {
+    background: linear-gradient(135deg, #00b4d8, #0077b6, #023e8a);
+    padding: 28px 52px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hero-strip h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.3;
+    flex: 1;
+  }
+
+  .hero-strip h1 span {
+    color: #90e0ef;
+  }
+
+  .hero-strip p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    max-width: 280px;
+    line-height: 1.6;
+    text-align: right;
+  }
+
+  /* ── BODY ── */
+  .body { flex: 1; padding: 40px 52px; display: flex; flex-direction: column; gap: 32px; }
+
+  /* PROBLEM / SOLUTION */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .box {
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .box-problem {
+    background: #fff5f5;
+    border: 1.5px solid #fecaca;
+  }
+
+  .box-solution {
+    background: #f0fdf9;
+    border: 1.5px solid #a7f3d0;
+  }
+
+  .box-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .box-problem .box-label { color: #ef4444; }
+  .box-solution .box-label { color: #059669; }
+
+  .box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #111;
+  }
+
+  .box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .box ul li {
+    font-size: 13px;
+    color: #444;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+
+  .box ul li::before { flex-shrink: 0; margin-top: 1px; }
+  .box-problem ul li::before { content: '✗'; color: #ef4444; font-weight: 700; }
+  .box-solution ul li::before { content: '✓'; color: #059669; font-weight: 700; }
+
+  /* HOW IT WORKS */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #0077b6;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, #0077b633, transparent);
+  }
+
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .step {
+    text-align: center;
+    padding: 20px 14px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    position: relative;
+  }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0077b6, #00b4d8);
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px;
+  }
+
+  .step-icon { font-size: 22px; margin-bottom: 8px; }
+  .step h4 { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
+  .step p { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* PRICING */
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .plan {
+    border-radius: 14px;
+    padding: 22px 18px;
+    border: 1.5px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .plan.featured {
+    border-color: #0077b6;
+    background: linear-gradient(160deg, #f0f9ff, white);
+  }
+
+  .plan.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: 12px; right: -28px;
+    background: #0077b6;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 36px;
+    transform: rotate(45deg);
+  }
+
+  .plan-name { font-size: 12px; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .plan-price { font-size: 28px; font-weight: 900; color: #0f172a; margin-bottom: 2px; }
+  .plan-price span { font-size: 13px; font-weight: 500; color: #64748b; }
+  .plan-setup { font-size: 11px; color: #94a3b8; margin-bottom: 14px; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .plan-features li { font-size: 12px; color: #334155; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+  .plan-features li::before { content: '⚡'; font-size: 10px; margin-top: 1px; flex-shrink: 0; }
+
+  /* SOCIAL PROOF */
+  .proof-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .proof-stat {
+    text-align: center;
+    padding: 18px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .proof-num { font-size: 30px; font-weight: 900; color: #0077b6; margin-bottom: 4px; }
+  .proof-label { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #0a0a12;
+    padding: 22px 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-left { font-size: 12px; color: rgba(79,195,247,0.5); }
+  .footer-left strong { color: rgba(79,195,247,0.8); }
+
+  .cta-box {
+    background: linear-gradient(135deg, #0077b6, #00b4d8);
+    padding: 12px 24px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .cta-box p { font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 2px; }
+  .cta-box strong { font-size: 15px; color: white; font-weight: 800; letter-spacing: 0.5px; }
+
+  .footer-right { font-size: 11px; color: rgba(255,255,255,0.25); text-align: right; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-row">
+        <svg class="logo-bolt" viewBox="0 0 44 44" fill="none">
+          <defs>
+            <filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="50%" stop-color="#00e5ff"/>
+              <stop offset="100%" stop-color="#0077ff"/>
+            </linearGradient>
+          </defs>
+          <polygon points="26,3 12,24 20,24 18,41 32,20 24,20" fill="url(#bg)" filter="url(#glow)"/>
+        </svg>
+        <div class="logo-name">Atlas AI</div>
+      </div>
+      <div class="logo-sub">AI Automation for Local Business</div>
+    </div>
+    <div class="header-right">
+      <div class="contact-name">Braxton Kerr</div>
+      <div class="contact-details">
+        Atlas AI Automation<br>
+        Wasatch Front, Utah<br>
+        (your phone number)<br>
+        atlasaiautomation.com
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO STRIP -->
+  <div class="hero-strip">
+    <h1>Your business is losing leads<br><span>every night while you sleep.</span></h1>
+    <p>Customers visit your website after hours, have a question, and leave. Atlas AI answers them instantly — 24/7 — so you never miss another job.</p>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- PROBLEM / SOLUTION -->
+    <div class="two-col">
+      <div class="box box-problem">
+        <div class="box-label">The Problem</div>
+        <h3>What's happening right now</h3>
+        <ul>
+          <li>Customers visit your site at night and get no answer</li>
+          <li>Leads go cold waiting for a callback</li>
+          <li>Your phone rings during jobs and you miss it</li>
+          <li>Competitors with faster responses get the job</li>
+          <li>You're paying for website traffic that doesn't convert</li>
+        </ul>
+      </div>
+      <div class="box box-solution">
+        <div class="box-label">The Solution</div>
+        <h3>What Atlas AI does for you</h3>
+        <ul>
+          <li>Answers customer questions instantly, 24/7</li>
+          <li>Captures lead info while you're on a job</li>
+          <li>Books appointments and quotes automatically</li>
+          <li>Responds in seconds — before competitors even wake up</li>
+          <li>Runs on your existing website — nothing changes</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div>
+      <div class="section-title">How It Works</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-icon">📋</div>
+          <h4>We Learn Your Business</h4>
+          <p>Quick 20-min call. We capture your services, pricing, and hours.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-icon">⚡</div>
+          <h4>We Build Your AI</h4>
+          <p>Custom assistant trained on your exact business in 48 hours.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-icon">🔌</div>
+          <h4>One Line of Code</h4>
+          <p>Your web person pastes one line. Done in 60 seconds.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-icon">💰</div>
+          <h4>Leads Come In</h4>
+          <p>You get notified every time a customer is captured. We handle the rest.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div>
+      <div class="section-title">Why It Works</div>
+      <div class="proof-row">
+        <div class="proof-stat">
+          <div class="proof-num">67%</div>
+          <div class="proof-label">of customers prefer getting answers instantly over waiting for a callback</div>
+        </div>
+        <div class="proof-stat">
+          <div class="proof-num">40%</div>
+          <div class="proof-label">of service business website traffic happens outside of business hours</div>
+        </div>
+        <div class="proof-stat">
+          <div class="proof-num">5 min</div>
+          <div class="proof-label">response time increases lead conversion by over 400% vs. responding in an hour</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div>
+      <div class="section-title">Simple, Honest Pricing</div>
+      <div class="pricing">
+        <div class="plan">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price">$150<span>/mo</span></div>
+          <div class="plan-setup">+ $800 one-time setup</div>
+          <ul class="plan-features">
+            <li>AI answers questions 24/7</li>
+            <li>Links to your booking page</li>
+            <li>Up to 200 conversations/mo</li>
+            <li>Email support</li>
+          </ul>
+        </div>
+        <div class="plan featured">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">$300<span>/mo</span></div>
+          <div class="plan-setup">+ $1,500 one-time setup</div>
+          <ul class="plan-features">
+            <li>Everything in Starter</li>
+            <li>Captures lead name & phone</li>
+            <li>Notifies you of every lead</li>
+            <li>Unlimited conversations</li>
+            <li>Monthly tune-ups included</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <div class="plan-name">Premium</div>
+          <div class="plan-price">$500<span>/mo</span></div>
+          <div class="plan-setup">+ $3,000 one-time setup</div>
+          <ul class="plan-features">
+            <li>Everything in Pro</li>
+            <li>Books directly in your software</li>
+            <li>Integrates with scheduling apps</li>
+            <li>Priority support</li>
+            <li>Quarterly strategy review</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      No contracts · Cancel anytime<br>
+      <strong>If it doesn't pay for itself, you don't owe us.</strong>
+    </div>
+    <div class="cta-box">
+      <p>Ready to see it on your website?</p>
+      <strong>Call or text: (your number)</strong>
+    </div>
+    <div class="footer-right">
+      Atlas AI Automation<br>
+      Wasatch Front, Utah<br>
+      atlasaiautomation.com
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

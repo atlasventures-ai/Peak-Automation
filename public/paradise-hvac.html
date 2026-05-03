@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paradise Heating and Air — Salt Lake City, UT</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f9f7f4;
+    color: #1a1a1a;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: white;
+    border-bottom: 1px solid #e5e0d8;
+    padding: 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 76px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .site-logo { display: flex; align-items: center; gap: 12px; }
+
+  .logo-badge {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(232,93,4,0.3);
+  }
+
+  .logo-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.1;
+  }
+
+  .logo-name span { color: #e85d04; }
+  .logo-sub { font-size: 11px; color: #888; letter-spacing: 1px; margin-top: 2px; }
+
+  nav { display: flex; gap: 28px; align-items: center; }
+  nav a { text-decoration: none; color: #555; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+  nav a:hover { color: #e85d04; }
+
+  .nav-phone {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 700; color: #e85d04;
+    text-decoration: none;
+  }
+
+  .nav-cta {
+    background: #e85d04;
+    color: white !important;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 700 !important;
+    transition: background 0.2s !important;
+  }
+  .nav-cta:hover { background: #c44d00 !important; color: white !important; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    color: white;
+    padding: 90px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '🔥';
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 220px;
+    opacity: 0.04;
+  }
+
+  .hero-left { max-width: 580px; position: relative; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,93,4,0.2);
+    border: 1px solid rgba(232,93,4,0.4);
+    color: #f48c06;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-size: 50px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 span { color: #f48c06; }
+
+  .hero p {
+    font-size: 18px;
+    opacity: 0.8;
+    line-height: 1.7;
+    margin-bottom: 36px;
+  }
+
+  .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  .btn-orange {
+    background: #e85d04;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 6px 20px rgba(232,93,4,0.4);
+  }
+  .btn-orange:hover { background: #c44d00; transform: translateY(-2px); }
+
+  .btn-outline {
+    background: transparent;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    border: 2px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.08); }
+
+  /* Trust badges */
+  .trust-strip {
+    background: #e85d04;
+    padding: 18px 60px;
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+  }
+
+  .trust-item .ti-icon { font-size: 22px; }
+  .trust-item .ti-text { font-size: 14px; font-weight: 600; }
+
+  /* ── SERVICES ── */
+  .services {
+    padding: 80px 60px;
+    background: white;
+    text-align: center;
+  }
+
+  .label-tag {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #e85d04;
+    margin-bottom: 12px;
+  }
+
+  .section-h {
+    font-size: 38px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+  }
+
+  .section-p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 52px;
+    max-width: 520px;
+    margin-left: auto; margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: #f9f7f4;
+    border: 1px solid #e8e0d4;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: left;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.09);
+    border-color: #e85d04;
+  }
+
+  .card-icon { font-size: 36px; margin-bottom: 16px; }
+  .card h3 { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+  .card p { font-size: 14px; color: #666; line-height: 1.6; }
+
+  /* Emergency bar */
+  .emergency-bar {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    color: white;
+    padding: 40px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+
+  .emergency-bar h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .emergency-bar p { opacity: 0.75; font-size: 15px; }
+  .emergency-bar .btn-orange { white-space: nowrap; }
+
+  /* Footer */
+  footer {
+    background: #111;
+    color: #888;
+    text-align: center;
+    padding: 28px;
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  footer a { color: #e85d04; text-decoration: none; }
+
+  /* ── CHAT WIDGET ── */
+  .chat-widget {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .chat-intro {
+    background: white;
+    border-radius: 16px 16px 4px 16px;
+    padding: 14px 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    font-size: 14px;
+    color: #1a1a1a;
+    max-width: 270px;
+    line-height: 1.5;
+    border: 1px solid #e5e0d8;
+    animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+
+  .chat-intro strong { display: block; margin-bottom: 4px; color: #e85d04; }
+  .chat-intro span { color: #666; font-size: 13px; }
+
+  .chat-fab {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 30px rgba(232,93,4,0.5);
+    transition: transform 0.2s;
+    animation: pulse-fab 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .chat-fab:hover { transform: scale(1.1); }
+
+  .fab-icon { font-size: 28px; transition: transform 0.3s; }
+  .fab-badge {
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 20px; height: 20px;
+    background: #dc2626;
+    border-radius: 50%;
+    border: 2px solid white;
+    font-size: 11px;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+
+  .chat-window {
+    width: 370px;
+    height: 520px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e5e0d8;
+    animation: slide-up 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    transform-origin: bottom right;
+  }
+
+  .chat-window.hidden { display: none; }
+
+  .cw-header {
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    color: white;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .cw-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 2px solid rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+
+  .cw-info h4 { font-size: 15px; font-weight: 700; }
+  .cw-info span {
+    font-size: 12px;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .online-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #86efac;
+    box-shadow: 0 0 6px #86efac;
+    animation: blink 2s infinite;
+  }
+
+  .cw-close {
+    margin-left: auto;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .cw-close:hover { background: rgba(255,255,255,0.35); }
+
+  .cw-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #faf9f7;
+  }
+
+  .cw-messages::-webkit-scrollbar { width: 4px; }
+  .cw-messages::-webkit-scrollbar-thumb { background: #d4c9b8; border-radius: 2px; }
+
+  .bot-row { display: flex; gap: 10px; align-items: flex-start; }
+
+  .bot-av {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .bot-bubble {
+    background: white;
+    border: 1px solid #e5e0d8;
+    border-radius: 16px 16px 16px 4px;
+    padding: 12px 15px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 85%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    animation: msg-pop 0.3s ease forwards;
+  }
+
+  .user-row { display: flex; justify-content: flex-end; animation: msg-pop 0.3s ease forwards; }
+
+  .user-bubble {
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    color: white;
+    border-radius: 16px 16px 4px 16px;
+    padding: 12px 15px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 85%;
+  }
+
+  .typing-row { display: flex; gap: 10px; align-items: flex-start; }
+
+  .typing-bubble {
+    background: white;
+    border: 1px solid #e5e0d8;
+    border-radius: 16px 16px 16px 4px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .typing-bubble span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #bbb;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+  .quick-replies { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+
+  .quick-reply {
+    background: white;
+    border: 1.5px solid #e85d04;
+    color: #e85d04;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .quick-reply:hover { background: #e85d04; color: white; }
+
+  .cw-footer {
+    padding: 14px 16px;
+    border-top: 1px solid #e5e0d8;
+    display: flex;
+    gap: 10px;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .cw-input {
+    flex: 1;
+    border: 1.5px solid #e5e0d8;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    color: #1a1a1a;
+    transition: border-color 0.2s;
+    background: #faf9f7;
+  }
+  .cw-input:focus { border-color: #e85d04; background: white; }
+  .cw-input::placeholder { color: #aaa; }
+
+  .cw-send {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e85d04, #f48c06);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 16px;
+    transition: transform 0.15s;
+    box-shadow: 0 4px 12px rgba(232,93,4,0.35);
+    flex-shrink: 0;
+  }
+  .cw-send:hover { transform: scale(1.07); }
+  .cw-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .powered-by {
+    text-align: center;
+    font-size: 10px;
+    color: #aaa;
+    padding: 6px 0 2px;
+    background: white;
+    letter-spacing: 0.5px;
+  }
+  .powered-by a { color: #e85d04; text-decoration: none; font-weight: 600; }
+
+  /* ANIMATIONS */
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.8) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes msg-pop {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+  @keyframes pulse-fab {
+    0%, 100% { box-shadow: 0 8px 30px rgba(232,93,4,0.5); }
+    50% { box-shadow: 0 8px 40px rgba(232,93,4,0.75), 0 0 0 8px rgba(232,93,4,0.1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="site-logo">
+    <div class="logo-badge">🔥</div>
+    <div>
+      <div class="logo-name"><span>Paradise</span> Heating & Air</div>
+      <div class="logo-sub">Salt Lake City, Utah · Est. 1984</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#">Services</a>
+    <a href="#">About Us</a>
+    <a href="#">Financing</a>
+    <a href="#">Reviews</a>
+    <a href="#" class="nav-cta">Get a Free Quote</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-badge">⭐ 40+ Years of Experience</div>
+    <h1>Comfort You Can<br><span>Count On.</span></h1>
+    <p>Family-owned HVAC experts serving Salt Lake City, Bluffdale, and the Wasatch Front. Heating, cooling, and 24/7 emergency service — we're there when you need us most.</p>
+    <div class="hero-btns">
+      <button class="btn-orange">📅 Schedule Service</button>
+      <button class="btn-outline">📞 (801) 386-0956</button>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-item"><div class="ti-icon">🏠</div><div class="ti-text">Family Owned & Operated</div></div>
+  <div class="trust-item"><div class="ti-icon">🚨</div><div class="ti-text">24/7 Emergency Service</div></div>
+  <div class="trust-item"><div class="ti-icon">⭐</div><div class="ti-text">40+ Years Experience</div></div>
+  <div class="trust-item"><div class="ti-icon">🔧</div><div class="ti-text">Residential & Commercial</div></div>
+</div>
+
+<!-- SERVICES -->
+<section class="services">
+  <div class="label-tag">What We Do</div>
+  <h2 class="section-h">Full-Service HVAC Solutions</h2>
+  <p class="section-p">From new installations to emergency repairs, we handle everything — so you stay comfortable year-round.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">🔥</div>
+      <h3>Heating Installation</h3>
+      <p>Furnace and heat pump installs done right the first time. We carry all major brands with warranty-backed work.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">❄️</div>
+      <h3>AC Installation</h3>
+      <p>Stay cool all summer. We size, install, and commission air conditioning systems for homes and businesses.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔧</div>
+      <h3>Repairs & Diagnostics</h3>
+      <p>HVAC acting up? Our techs diagnose fast and fix it right. No unnecessary upsells — just honest work.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <h3>Maintenance Plans</h3>
+      <p>Annual tune-ups keep your system running efficiently and catch small issues before they become expensive ones.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏢</div>
+      <h3>Commercial HVAC</h3>
+      <p>Office buildings, retail, warehouses — we handle commercial HVAC projects of all sizes across the Wasatch Front.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💨</div>
+      <h3>Indoor Air Quality</h3>
+      <p>Air purifiers, humidifiers, duct cleaning, and filtration systems for a healthier home environment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- EMERGENCY BAR -->
+<div class="emergency-bar">
+  <div>
+    <h2>🚨 HVAC Emergency? We're Available 24/7</h2>
+    <p>No heat in January? AC out in July? We don't leave you hanging. Emergency service available year-round.</p>
+  </div>
+  <button class="btn-orange" style="font-size:17px; padding: 18px 36px;">Call Now: (801) 386-0956</button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  © 2026 Paradise Heating and Air · Bluffdale & Salt Lake City, UT · (801) 386-0956
+  <br>
+  Serving: South Jordan · Draper · Herriman · Murray · West Jordan · Sandy · Riverton
+  <br><br>
+  <small>⚡ AI assistant powered by <a href="#">Atlas AI Automation</a> — <a href="#">Get this for your business</a></small>
+</footer>
+
+
+<!-- ── CHAT WIDGET ── -->
+<div class="chat-widget" id="widget">
+
+  <div class="chat-intro" id="intro-bubble">
+    <strong>🔥 Hey there!</strong>
+    <span>Need HVAC help? I can answer questions, get you a quote, or schedule a service call — right now.</span>
+  </div>
+
+  <div class="chat-window hidden" id="chat-window">
+    <div class="cw-header">
+      <div class="cw-avatar">🔥</div>
+      <div class="cw-info">
+        <h4>Paradise HVAC Assistant</h4>
+        <span><div class="online-dot"></div> Online · Replies instantly</span>
+      </div>
+      <button class="cw-close" id="close-btn">✕</button>
+    </div>
+
+    <div class="cw-messages" id="cw-messages">
+      <div class="bot-row">
+        <div class="bot-av">🔥</div>
+        <div>
+          <div class="bot-bubble">
+            Hey! Welcome to Paradise Heating & Air. 👋<br><br>
+            I can help you schedule a service call, get a free quote, or answer any questions about your heating or AC. What do you need?
+          </div>
+          <div class="quick-replies" id="quick-replies">
+            <button class="quick-reply" onclick="quickSend('I need to schedule a service call')">📅 Schedule Service</button>
+            <button class="quick-reply" onclick="quickSend('I need emergency HVAC help right now')">🚨 Emergency Help</button>
+            <button class="quick-reply" onclick="quickSend('How much does a new AC unit cost?')">💰 Get a Quote</button>
+            <button class="quick-reply" onclick="quickSend('What areas do you serve?')">📍 Service Area</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cw-footer">
+      <input class="cw-input" id="cw-input" placeholder="Type your question..." />
+      <button class="cw-send" id="cw-send">➤</button>
+    </div>
+    <div class="powered-by">Powered by <a href="#">Atlas AI Automation</a> ⚡</div>
+  </div>
+
+  <button class="chat-fab" id="fab">
+    <div class="fab-icon" id="fab-icon">💬</div>
+    <div class="fab-badge" id="fab-badge">1</div>
+  </button>
+</div>
+
+<script>
+const BUSINESS_ID = 'paradise-hvac';
+  const SERVER = 'http://localhost:4242';
+
+const msgsEl  = document.getElementById('cw-messages');
+const inputEl = document.getElementById('cw-input');
+const sendBtn = document.getElementById('cw-send');
+const fab     = document.getElementById('fab');
+const fabIcon = document.getElementById('fab-icon');
+const fabBadge = document.getElementById('fab-badge');
+const chatWin = document.getElementById('chat-window');
+const introBub = document.getElementById('intro-bubble');
+const closeBtn = document.getElementById('close-btn');
+
+let history = [], busy = false, isOpen = false;
+
+fab.addEventListener('click', () => {
+  isOpen = !isOpen;
+  if (isOpen) {
+    chatWin.classList.remove('hidden');
+    introBub.style.display = 'none';
+    fabIcon.textContent = '✕';
+    fabBadge.style.display = 'none';
+    inputEl.focus();
+  } else {
+    chatWin.classList.add('hidden');
+    fabIcon.textContent = '💬';
+  }
+});
+
+closeBtn.addEventListener('click', () => {
+  isOpen = false;
+  chatWin.classList.add('hidden');
+  fabIcon.textContent = '💬';
+});
+
+function quickSend(text) {
+  document.getElementById('quick-replies')?.remove();
+  inputEl.value = text;
+  send();
+}
+
+function addBot(text = '') {
+  const row = document.createElement('div');
+  row.className = 'bot-row';
+  row.innerHTML = `<div class="bot-av">🔥</div><div class="bot-bubble"></div>`;
+  msgsEl.appendChild(row);
+  const bubble = row.querySelector('.bot-bubble');
+  if (text) bubble.textContent = text;
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  return bubble;
+}
+
+function addUser(text) {
+  const row = document.createElement('div');
+  row.className = 'user-row';
+  row.innerHTML = `<div class="user-bubble">${text}</div>`;
+  msgsEl.appendChild(row);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function addTyping() {
+  const row = document.createElement('div');
+  row.className = 'typing-row';
+  row.innerHTML = `<div class="bot-av">🔥</div><div class="typing-bubble"><span></span><span></span><span></span></div>`;
+  msgsEl.appendChild(row);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  return row;
+}
+
+async function send() {
+  const text = inputEl.value.trim();
+  if (!text || busy) return;
+  busy = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  addUser(text);
+  history.push({ role: 'user', content: text });
+  const typingRow = addTyping();
+
+  try {
+    const res = await fetch(`${SERVER}/api/chat/${BUSINESS_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history }),
+    });
+
+    typingRow.remove();
+    const bubble = addBot();
+    let full = '';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const evt = JSON.parse(line.slice(6));
+          if (evt.type === 'text') {
+            full += evt.text;
+            bubble.textContent = full;
+            msgsEl.scrollTop = msgsEl.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+    history.push({ role: 'assistant', content: full });
+
+  } catch (err) {
+    typingRow.remove();
+    addBot('Sorry, something went wrong. Please call us directly at (801) 386-0956 🔥');
+  }
+
+  busy = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+
+// Auto-open after 4 seconds
+setTimeout(() => {
+  if (!isOpen) {
+    isOpen = true;
+    chatWin.classList.remove('hidden');
+    introBub.style.display = 'none';
+    fabIcon.textContent = '✕';
+    fabBadge.style.display = 'none';
+  }
+}, 4000);
+</script>
+</body>
+</html>
