@@ -5,6 +5,31 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 4242;
+const LEADS_FILE = path.join(__dirname, 'leads.json');
+
+function getLeads() {
+  if (!fs.existsSync(LEADS_FILE)) fs.writeFileSync(LEADS_FILE, '[]');
+  return JSON.parse(fs.readFileSync(LEADS_FILE, 'utf8'));
+}
+
+function saveLead(lead) {
+  const leads = getLeads();
+  leads.unshift({ ...lead, id: Date.now(), createdAt: new Date().toISOString() });
+  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+}
+
+async function sendTelegram(message) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' })
+    });
+  } catch(e) { console.error('Telegram error:', e.message); }
+}
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -29,6 +54,32 @@ function getBusinesses() {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── Contact form submission ───────────────────────────────────────────────────
+app.post('/api/contact', async (req, res) => {
+  const { name, phone, business, type, website } = req.body;
+  if (!name || !phone || !business) return res.status(400).json({ error: 'Missing required fields' });
+  saveLead({ name, phone, business, type, website, source: 'contact-form' });
+  const msg = `⚡ <b>New Lead — Peak Automation</b>\n\n👤 <b>${name}</b>\n📱 ${phone}\n🏢 ${business}\n🏷️ ${type || 'Not specified'}\n🌐 ${website || 'No website'}\n\n<i>via contact form</i>`;
+  await sendTelegram(msg);
+  res.json({ success: true });
+});
+
+// ── Chat lead capture ─────────────────────────────────────────────────────────
+app.post('/api/lead', async (req, res) => {
+  const { name, phone, businessId, source } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'Missing fields' });
+  saveLead({ name, phone, businessId, source: source || 'chat-widget' });
+  const biz = businessId ? `on <b>${businessId}</b>` : '';
+  const msg = `💬 <b>New Chat Lead</b> ${biz}\n\n👤 <b>${name}</b>\n📱 ${phone}\n\n<i>Started chatting on peakautomation.io</i>`;
+  await sendTelegram(msg);
+  res.json({ success: true });
+});
+
+// ── Leads dashboard ───────────────────────────────────────────────────────────
+app.get('/api/leads', (req, res) => {
+  res.json(getLeads());
+});
 
 // ── Atlas personal chat ──────────────────────────────────────────────────────
 app.post('/chat', async (req, res) => {

@@ -1,3 +1,6 @@
 node_modules/
-logs/
 .env
+leads.json
+logs/
+*.log
+.DS_Store

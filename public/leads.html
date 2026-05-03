@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peak Automation — Leads Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --dark: #060810;
+    --dark2: #0d1120;
+    --dark3: #111827;
+    --white: #ffffff;
+    --muted: rgba(255,255,255,0.5);
+    --border: rgba(255,255,255,0.07);
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--dark);
+    color: var(--white);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  .login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+  }
+
+  .login-card {
+    width: 360px;
+    background: var(--dark2);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 48px 40px;
+    text-align: center;
+  }
+
+  .login-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+  }
+
+  .login-card h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .login-card p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .login-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 13px 16px;
+    color: white;
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+    text-align: center;
+    letter-spacing: 4px;
+  }
+  .login-input:focus { border-color: rgba(201,168,76,0.5); }
+
+  .login-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #c9a84c, #e8c97a);
+    color: #060810;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+  }
+  .login-btn:hover { opacity: 0.9; }
+
+  .login-error {
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* ── DASHBOARD ── */
+  .dashboard { display: none; }
+
+  header {
+    background: rgba(13,17,32,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .header-right a {
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .header-right a:hover { color: var(--white); }
+
+  .logout-btn {
+    padding: 7px 16px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover { border-color: rgba(255,255,255,0.3); color: white; }
+
+  main { padding: 40px 32px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── STATS ROW ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .stat-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .stat-card .num {
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .stat-card .label {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .toolbar h2 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .toolbar-right { display: flex; gap: 10px; align-items: center; }
+
+  .filter-btn {
+    padding: 7px 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: rgba(201,168,76,0.5); color: var(--gold); }
+
+  .refresh-btn {
+    padding: 7px 16px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--gold);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover { background: rgba(201,168,76,0.2); }
+
+  /* ── LEADS TABLE ── */
+  .leads-table {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 1.5fr 1.2fr 1.5fr 1fr 1fr 1fr;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .th {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .lead-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1.2fr 1.5fr 1fr 1fr 1fr;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+    align-items: center;
+  }
+  .lead-row:last-child { border-bottom: none; }
+  .lead-row:hover { background: rgba(255,255,255,0.02); }
+
+  .lead-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+  }
+
+  .lead-phone {
+    font-size: 13px;
+    color: var(--gold);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .lead-phone:hover { opacity: 0.8; }
+
+  .lead-business {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .source-chat { background: rgba(34,197,94,0.12); color: #4ade80; }
+  .source-form { background: rgba(201,168,76,0.12); color: var(--gold); }
+
+  .lead-date {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: 'Outfit', sans-serif;
+  }
+  .status-badge:hover { background: rgba(59,130,246,0.2); }
+  .status-badge.contacted { background: rgba(201,168,76,0.12); color: var(--gold); }
+  .status-badge.closed { background: rgba(34,197,94,0.12); color: #4ade80; }
+
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    main { padding: 24px 16px; }
+    header { padding: 16px 20px; }
+    .table-header { display: none; }
+    .lead-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">⚡ Peak Automation</div>
+    <h2>Leads Dashboard</h2>
+    <p>Enter your access code to continue</p>
+    <input type="password" class="login-input" id="passwordInput" placeholder="••••••••" />
+    <button class="login-btn" onclick="checkPassword()">Access Dashboard</button>
+    <div class="login-error" id="loginError">Incorrect code. Try again.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <header>
+    <div class="header-logo">⚡ Peak Automation — Leads</div>
+    <div class="header-right">
+      <a href="/">← Back to Site</a>
+      <button class="logout-btn" onclick="logout()">Lock</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-card">
+        <div class="num" id="statTotal">—</div>
+        <div class="label">Total Leads</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statToday">—</div>
+        <div class="label">Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statChat">—</div>
+        <div class="label">From Chat</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statForm">—</div>
+        <div class="label">From Form</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <h2>All Leads</h2>
+      <div class="toolbar-right">
+        <button class="filter-btn active" onclick="filterLeads('all', this)">All</button>
+        <button class="filter-btn" onclick="filterLeads('chat-widget', this)">Chat</button>
+        <button class="filter-btn" onclick="filterLeads('contact-form', this)">Form</button>
+        <button class="refresh-btn" onclick="loadLeads()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="leads-table">
+      <div class="table-header">
+        <div class="th">Name</div>
+        <div class="th">Phone</div>
+        <div class="th">Business</div>
+        <div class="th">Source</div>
+        <div class="th">Date</div>
+        <div class="th">Status</div>
+      </div>
+      <div id="leadsBody">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <p>Loading leads...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const PASSWORD = 'peak2026';
+  let allLeads = [];
+  let currentFilter = 'all';
+
+  function checkPassword() {
+    const val = document.getElementById('passwordInput').value;
+    if (val === PASSWORD) {
+      sessionStorage.setItem('pa_auth', '1');
+      showDashboard();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('passwordInput').value = '';
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('pa_auth');
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+
+  function showDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadLeads();
+  }
+
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPassword();
+  });
+
+  async function loadLeads() {
+    try {
+      const res = await fetch('/api/leads');
+      allLeads = await res.json();
+      renderLeads(allLeads);
+      updateStats(allLeads);
+    } catch(e) {
+      document.getElementById('leadsBody').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load leads.</p></div>';
+    }
+  }
+
+  function updateStats(leads) {
+    const today = new Date().toDateString();
+    document.getElementById('statTotal').textContent = leads.length;
+    document.getElementById('statToday').textContent = leads.filter(l => new Date(l.createdAt).toDateString() === today).length;
+    document.getElementById('statChat').textContent = leads.filter(l => l.source && l.source.includes('chat')).length;
+    document.getElementById('statForm').textContent = leads.filter(l => l.source === 'contact-form').length;
+  }
+
+  function filterLeads(source, btn) {
+    currentFilter = source;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = source === 'all' ? allLeads : allLeads.filter(l => l.source && l.source.includes(source));
+    renderLeads(filtered);
+  }
+
+  function renderLeads(leads) {
+    const body = document.getElementById('leadsBody');
+    if (!leads.length) {
+      body.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No leads yet — share your site and they\'ll show up here.</p></div>';
+      return;
+    }
+
+    body.innerHTML = leads.map(lead => {
+      const date = new Date(lead.createdAt);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const isChat = lead.source && lead.source.includes('chat');
+      const sourceLabel = isChat ? '💬 Chat' : '📝 Form';
+      const sourceCls = isChat ? 'source-chat' : 'source-form';
+      const status = lead.status || 'new';
+      const statusLabels = { new: 'New', contacted: 'Contacted', closed: 'Closed ✓' };
+      const statusCls = status === 'contacted' ? 'contacted' : status === 'closed' ? 'closed' : '';
+
+      return `
+        <div class="lead-row" data-id="${lead.id}">
+          <div class="lead-name">${lead.name || '—'}</div>
+          <div><a class="lead-phone" href="tel:${lead.phone}">${lead.phone || '—'}</a></div>
+          <div class="lead-business">${lead.business || lead.businessId || '—'}</div>
+          <div><span class="source-badge ${sourceCls}">${sourceLabel}</span></div>
+          <div class="lead-date">${dateStr}</div>
+          <div><button class="status-badge ${statusCls}" onclick="cycleStatus(${lead.id}, this)">${statusLabels[status] || 'New'}</button></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function cycleStatus(id, btn) {
+    const order = ['new', 'contacted', 'closed'];
+    const labels = { new: 'New', contacted: 'Contacted', closed: 'Closed ✓' };
+    const current = btn.textContent.trim().replace(' ✓', '');
+    const idx = order.findIndex(s => labels[s].replace(' ✓', '') === current);
+    const next = order[(idx + 1) % order.length];
+    btn.textContent = labels[next];
+    btn.className = 'status-badge' + (next === 'contacted' ? ' contacted' : next === 'closed' ? ' closed' : '');
+
+    // Update in local array
+    const lead = allLeads.find(l => l.id === id);
+    if (lead) lead.status = next;
+  }
+
+  // Auto-check session
+  if (sessionStorage.getItem('pa_auth') === '1') showDashboard();
+</script>
+</body>
+</html>
