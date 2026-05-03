@@ -1,7 +1,7 @@
 (function () {
   const script = document.currentScript;
   const businessId = script?.getAttribute('data-business');
-  const serverUrl = script?.getAttribute('data-server') || 'http://localhost:4242';
+  const serverUrl = script?.getAttribute('data-server') || window.location.origin;
 
   if (!businessId) { console.warn('[Atlas Widget] Missing data-business attribute'); return; }
 
