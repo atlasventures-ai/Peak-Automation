@@ -69,6 +69,45 @@
         "Just Right Air",
         "True Pros HVAC"
       ]
+    },
+    "pricing": {
+      "AC tune-up / maintenance": "$79–$149",
+      "AC repair (common issues)": "$150–$450",
+      "New AC unit installed": "$3,200–$6,500 depending on size",
+      "Furnace tune-up": "$79–$129",
+      "Furnace repair": "$150–$600",
+      "New furnace installed": "$2,800–$5,500",
+      "Smart thermostat install": "$150–$350 including hardware",
+      "Emergency service call": "$150 diagnostic fee, parts extra"
+    },
+    "serviceZips": [
+      "84065",
+      "84095",
+      "84096",
+      "84070",
+      "84094",
+      "84047",
+      "84107",
+      "84123",
+      "84101",
+      "84102",
+      "84103",
+      "84104",
+      "84105",
+      "84106",
+      "84108",
+      "84109",
+      "84115",
+      "84116",
+      "84117",
+      "84119",
+      "84120",
+      "84121"
+    ],
+    "seasonalPromos": {
+      "winter": "Furnace tune-up special — $79 (reg. $129). Keep your heat running all winter.",
+      "summer": "AC tune-up special — $79. Get it checked before the heat hits.",
+      "shoulder season": "Spring AC checkup special — $79. Book before the summer rush."
     }
   },
   "peak-automation": {

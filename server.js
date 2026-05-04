@@ -102,6 +102,19 @@ function buildSystemPrompt(biz) {
   const now    = localTimeString(tz);
   let prompt   = biz.prompt;
 
+  // Build pricing context if available
+  let pricingContext = '';
+  if (biz.pricing) {
+    const lines = Object.entries(biz.pricing).map(([service, range]) => `- ${service}: ${range}`);
+    pricingContext = `\n\nPRICING ESTIMATES (use these to give ballpark ranges — always say prices vary and offer to get an exact quote):\n${lines.join('\n')}`;
+  }
+
+  // Service area context
+  let serviceAreaContext = '';
+  if (biz.serviceZips?.length) {
+    serviceAreaContext = `\n\nSERVICE AREA ZIP CODES: ${biz.serviceZips.join(', ')}. If a customer mentions a zip code not on this list, let them know you may not serve that area and offer to check.`;
+  }
+
   const bookingInstructions = `
 
 BOOKING & LEAD CAPTURE — CRITICAL INSTRUCTIONS:
@@ -122,7 +135,25 @@ Tell customers you're closed but you'd love to get them taken care of. Capture t
     prompt += `\n\nCURRENT TIME: ${now} — THE BUSINESS IS OPEN.`;
   }
 
-  prompt += bookingInstructions;
+  prompt += pricingContext + serviceAreaContext + bookingInstructions;
+
+  // Bilingual instruction — always added
+  prompt += `
+
+LANGUAGE: If the customer writes in Spanish, respond entirely in Spanish. If they switch languages, you switch too. Be natural about it.`;
+
+  // Emergency detection
+  prompt += `
+
+EMERGENCY DETECTION: If the customer describes an emergency (no heat in winter, gas smell, flooding, sparking, no power, AC out in extreme heat, burst pipe), IMMEDIATELY give them the phone number and tell them to call right now. Don't ask for booking info in an emergency — get them to a human fast.`;
+
+  // Seasonal awareness
+  const month = new Date().getMonth();
+  const season = month >= 11 || month <= 1 ? 'winter' : month >= 5 && month <= 8 ? 'summer' : 'shoulder season';
+  if (biz.seasonalPromos?.[season]) {
+    prompt += `\n\nCURRENT PROMO (mention naturally when relevant, not pushy): ${biz.seasonalPromos[season]}`;
+  }
+
   return { prompt, status };
 }
 
