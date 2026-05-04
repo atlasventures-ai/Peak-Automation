@@ -239,6 +239,65 @@ app.post('/api/chat/:businessId', async (req, res) => {
   }
 });
 
+// ── Lead Gen — Reddit search ────────────────────────────────────────────────
+async function searchRedditLeads(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled) return [];
+
+  const subreddits = (cfg.subreddits || ['SaltLakeCity','Utah']).join('+');
+  const keywords   = (cfg.keywords  || [biz.name]).join('+OR+');
+  const url = `https://www.reddit.com/r/${subreddits}/search.json?q=${encodeURIComponent(keywords)}&sort=new&restrict_sr=1&limit=10&t=week`;
+
+  try {
+    const res  = await fetch(url, { headers: { 'User-Agent': 'PeakAutomation/1.0' } });
+    const data = await res.json();
+    const posts = data?.data?.children || [];
+    const cutoff = Date.now()/1000 - (cfg.lookbackHours || 48) * 3600;
+    return posts
+      .map(p => p.data)
+      .filter(p => p.created_utc > cutoff)
+      .map(p => ({
+        title:     p.title,
+        url:       `https://reddit.com${p.permalink}`,
+        subreddit: p.subreddit,
+        ageHours:  Math.round((Date.now()/1000 - p.created_utc) / 3600),
+        snippet:   p.selftext?.slice(0,200) || ''
+      }));
+  } catch(e) {
+    console.error('Reddit search error:', e.message);
+    return [];
+  }
+}
+
+app.post('/api/leadgen/run/:businessId', async (req, res) => {
+  const biz = getBusinesses()[req.params.businessId];
+  if (!biz) return res.status(404).json({ error: 'Not found' });
+  if (!biz.leadGen?.enabled) return res.status(400).json({ error: 'Lead gen not enabled for this business' });
+
+  const leads = await searchRedditLeads(biz);
+
+  if (leads.length === 0) {
+    return res.json({ found: 0, leads: [] });
+  }
+
+  // Telegram notification
+  const lines = leads.map(l =>
+    `• <b>${l.title}</b> (r/${l.subreddit}, ${l.ageHours}h ago)\n  ${l.url}`
+  ).join('\n\n');
+
+  const msg = `🎯 <b>Lead Gen Report — ${biz.name}</b>\n\nFound <b>${leads.length}</b> potential lead${leads.length>1?'s':''} on Reddit:\n\n${lines}\n\n<i>Reach out before your competitors do!</i>`;
+  await sendTelegram(msg);
+
+  res.json({ found: leads.length, leads });
+});
+
+app.get('/api/leadgen/run/:businessId', async (req, res) => {
+  const biz = getBusinesses()[req.params.businessId];
+  if (!biz) return res.status(404).json({ error: 'Not found' });
+  const leads = await searchRedditLeads(biz);
+  res.json({ found: leads.length, leads });
+});
+
 // ── Atlas personal chat ──────────────────────────────────────────────────────
 const ATLAS_SYSTEM = `You are Atlas, Brax's personal AI assistant. Direct, no-BS, like a sharp friend who knows their stuff.`;
 

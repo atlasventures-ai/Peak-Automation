@@ -39,6 +39,26 @@
       "sat": "9:00-15:00",
       "sun": null,
       "emergency": true
+    },
+    "leadGen": {
+      "enabled": true,
+      "subreddits": [
+        "SaltLakeCity",
+        "Utah",
+        "Draper",
+        "southjordan"
+      ],
+      "keywords": [
+        "HVAC",
+        "furnace",
+        "air conditioning",
+        "AC repair",
+        "heating",
+        "cooling",
+        "heat pump",
+        "mini split"
+      ],
+      "lookbackHours": 48
     }
   },
   "peak-automation": {
