@@ -62,7 +62,13 @@
       "location": "Salt Lake City Utah",
       "serviceLabel": "HVAC heating cooling furnace",
       "webSearchEnabled": true,
-      "lookbackHours": 48
+      "lookbackHours": 48,
+      "competitorKeywords": [
+        "Ascend HVAC",
+        "Home Performance Pros",
+        "Just Right Air",
+        "True Pros HVAC"
+      ]
     }
   },
   "peak-automation": {

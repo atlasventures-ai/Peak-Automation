@@ -296,6 +296,81 @@ async function searchWebLeads(biz) {
   }
 }
 
+// Yelp — scrape Q&A and "looking for" reviews
+async function searchYelpLeads(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled) return [];
+  const location = encodeURIComponent(cfg.location || 'Salt Lake City, UT');
+  const service  = encodeURIComponent(cfg.serviceLabel || 'HVAC');
+  const url = `https://www.yelp.com/search?find_desc=${service}&find_loc=${location}&sortby=review_count`;
+  try {
+    const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' }, signal: AbortSignal.timeout(8000) });
+    const html = await res.text();
+    const results = [];
+    // Find businesses that have Q&A activity
+    const bizRe = /"businessName":"([^"]+)"[\s\S]*?"businessUrl":"([^"]+)"/g;
+    let m;
+    let count = 0;
+    while ((m = bizRe.exec(html)) !== null && count < 3) {
+      results.push({ title: `Q&A opportunity: ${m[1]}`, url: `https://www.yelp.com${m[2]}?osq=${service}`, source: 'Yelp', snippet: 'Check Q&A section for people asking for recommendations' });
+      count++;
+    }
+    return results;
+  } catch(e) {
+    console.error('Yelp error:', e.message);
+    return [];
+  }
+}
+
+// Angi — public project/request listings
+async function searchAngiLeads(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled) return [];
+  const service  = encodeURIComponent((cfg.keywords || ['HVAC'])[0]);
+  const location = encodeURIComponent(cfg.location || 'Salt Lake City, UT');
+  const url = `https://www.angi.com/companylist/us/${location.toLowerCase().replace(/[^a-z0-9]+/g,'-')}/${service}.htm`;
+  try {
+    const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) });
+    const html = await res.text();
+    const results = [];
+    // Find recent project requests
+    const re = /"recentProjectDescription":"([^"]{20,})"/g;
+    let m;
+    while ((m = re.exec(html)) !== null && results.length < 5) {
+      results.push({ title: m[1].slice(0,100), url: `https://www.angi.com/tasks/${service}/`, source: 'Angi', snippet: 'Recent project request' });
+    }
+    if (results.length === 0) {
+      // Fallback — just link to the Angi leads section
+      results.push({ title: `Recent ${cfg.serviceLabel || 'service'} requests in ${cfg.location || 'your area'}`, url: `https://www.angi.com/companylist/us/ut/salt-lake-city/${service}.htm`, source: 'Angi', snippet: 'Check for recent project requests' });
+    }
+    return results;
+  } catch(e) {
+    console.error('Angi error:', e.message);
+    return [];
+  }
+}
+
+// Google Maps — find competitor businesses with recent negative reviews (unhappy customers = warm leads)
+async function searchCompetitorReviews(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled || !cfg?.competitorKeywords?.length) return [];
+  const results = [];
+  for (const competitor of (cfg.competitorKeywords || []).slice(0,3)) {
+    const query = `${competitor} ${cfg.location || 'Salt Lake City'} reviews site:google.com OR site:yelp.com`;
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=3`;
+    try {
+      const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
+      const html = await res.text();
+      const re   = /href="(https?:\/\/(?!google)[^"&]+)".*?<h3[^>]*>([^<]+)<\/h3>/g;
+      let m;
+      while ((m = re.exec(html)) !== null && results.length < 3) {
+        results.push({ title: `Competitor activity: ${m[2].trim()}`, url: m[1], source: 'Google Reviews', snippet: competitor });
+      }
+    } catch(e) {}
+  }
+  return results;
+}
+
 async function searchRedditLeads(biz) {
   const cfg = biz.leadGen;
   if (!cfg?.enabled) return [];
@@ -331,25 +406,34 @@ app.post('/api/leadgen/run/:businessId', async (req, res) => {
   if (!biz.leadGen?.enabled) return res.status(400).json({ error: 'Lead gen not enabled' });
 
   // Run all sources in parallel
-  const [redditLeads, craigslistLeads, webLeads] = await Promise.all([
+  const [redditLeads, craigslistLeads, webLeads, yelpLeads, angiLeads, competitorLeads] = await Promise.all([
     searchRedditLeads(biz),
     searchCraigslistLeads(biz),
-    searchWebLeads(biz)
+    searchWebLeads(biz),
+    searchYelpLeads(biz),
+    searchAngiLeads(biz),
+    searchCompetitorReviews(biz)
   ]);
 
   const all = [
-    ...redditLeads.map(l  => ({ ...l, source: 'Reddit' })),
-    ...craigslistLeads.map(l => ({ ...l, source: 'Craigslist' })),
-    ...webLeads.map(l    => ({ ...l, source: 'Web' }))
+    ...redditLeads.map(l      => ({ ...l, source: 'Reddit' })),
+    ...craigslistLeads.map(l  => ({ ...l, source: 'Craigslist' })),
+    ...webLeads.map(l         => ({ ...l, source: 'Web' })),
+    ...yelpLeads.map(l        => ({ ...l, source: 'Yelp' })),
+    ...angiLeads.map(l        => ({ ...l, source: 'Angi' })),
+    ...competitorLeads.map(l  => ({ ...l, source: 'Google Reviews' }))
   ];
 
   if (all.length === 0) return res.json({ found: 0, leads: [] });
 
   // Group by source for Telegram
   const sections = [];
-  if (redditLeads.length)     sections.push(`🗨️ <b>Reddit (${redditLeads.length})</b>\n` + redditLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
-  if (craigslistLeads.length) sections.push(`📌 <b>Craigslist (${craigslistLeads.length})</b>\n` + craigslistLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
-  if (webLeads.length)        sections.push(`🌐 <b>Web (${webLeads.length})</b>\n` + webLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
+  if (redditLeads.length)     sections.push(`🗨️ <b>Reddit (${redditLeads.length})</b>\n` + redditLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
+  if (craigslistLeads.length) sections.push(`📌 <b>Craigslist (${craigslistLeads.length})</b>\n` + craigslistLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
+  if (webLeads.length)        sections.push(`🌐 <b>Web (${webLeads.length})</b>\n` + webLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
+  if (yelpLeads.length)       sections.push(`⭐ <b>Yelp (${yelpLeads.length})</b>\n` + yelpLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
+  if (angiLeads.length)       sections.push(`🔧 <b>Angi (${angiLeads.length})</b>\n` + angiLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
+  if (competitorLeads.length) sections.push(`🔍 <b>Competitor Intel (${competitorLeads.length})</b>\n` + competitorLeads.map(l => `• ${l.title}\n  ${l.url}`).join('\n'));
 
   const msg = `🎯 <b>Lead Gen — ${biz.name}</b>\n<b>${all.length} potential leads found</b>\n\n${sections.join('\n\n')}\n\n<i>Reach out before your competitors do!</i>`;
   await sendTelegram(msg);
