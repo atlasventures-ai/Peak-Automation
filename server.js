@@ -240,6 +240,62 @@ app.post('/api/chat/:businessId', async (req, res) => {
 });
 
 // ── Lead Gen — Reddit search ────────────────────────────────────────────────
+// Craigslist — "services wanted" section
+async function searchCraigslistLeads(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled) return [];
+  const city    = cfg.craigslistCity || 'saltlakecity';
+  const keywords = (cfg.keywords || []).slice(0, 3).join(' OR ');
+  const url = `https://${city}.craigslist.org/search/sss?query=${encodeURIComponent(keywords)}&sort=date`;
+  try {
+    const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) });
+    const html = await res.text();
+    const results = [];
+    // Parse post titles + links from Craigslist HTML
+    const re = /data-pid="(\d+)"[^>]*>[\s\S]*?class="posting-title"[^>]*>[\s\S]*?<span[^>]*class="label"[^>]*>([^<]+)<\/span>[\s\S]*?href="([^"]+)"/g;
+    const re2 = /href="(\/[^"]+\.html)"[^>]*>[\s\S]*?<span class="label">([^<]+)<\/span>/g;
+    // Simpler: grab all result titles
+    const titleRe = /<a href="(https:\/\/[^"]+\.html)"[^>]*class="posting-title"[^>]*>[^<]*<span[^>]*>([^<]+)<\/span>/g;
+    let m;
+    const cutoffSec = Date.now()/1000 - (cfg.lookbackHours || 48)*3600;
+    while ((m = titleRe.exec(html)) !== null && results.length < 5) {
+      results.push({ title: m[2].trim(), url: m[1], source: 'Craigslist', ageHours: null, snippet: '' });
+    }
+    return results;
+  } catch(e) {
+    console.error('Craigslist error:', e.message);
+    return [];
+  }
+}
+
+// Google search — finds publicly indexed posts from Nextdoor, local forums, Facebook public groups
+async function searchWebLeads(biz) {
+  const cfg = biz.leadGen;
+  if (!cfg?.enabled || !cfg?.webSearchEnabled) return [];
+  const location = cfg.location || 'Salt Lake City Utah';
+  const service  = cfg.serviceLabel || biz.name;
+  const query    = `"looking for" OR "recommend" OR "need a" ${service} ${location} -site:yelp.com -site:homeadvisor.com`;
+  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbs=qdr:w&num=10`;
+  try {
+    const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }, signal: AbortSignal.timeout(8000) });
+    const html = await res.text();
+    const results = [];
+    const re = /href="(https?:\/\/(?!webcache|google)[^"&]+)"[^>]*>[\s\S]*?<h3[^>]*>([^<]+)<\/h3>/g;
+    let m;
+    while ((m = re.exec(html)) !== null && results.length < 5) {
+      const url2 = m[1];
+      const title = m[2].replace(/<[^>]+>/g,'').trim();
+      if (title && url2 && !url2.includes('google.com')) {
+        results.push({ title, url: url2, source: 'Web', ageHours: null, snippet: '' });
+      }
+    }
+    return results;
+  } catch(e) {
+    console.error('Web search error:', e.message);
+    return [];
+  }
+}
+
 async function searchRedditLeads(biz) {
   const cfg = biz.leadGen;
   if (!cfg?.enabled) return [];
@@ -272,30 +328,43 @@ async function searchRedditLeads(biz) {
 app.post('/api/leadgen/run/:businessId', async (req, res) => {
   const biz = getBusinesses()[req.params.businessId];
   if (!biz) return res.status(404).json({ error: 'Not found' });
-  if (!biz.leadGen?.enabled) return res.status(400).json({ error: 'Lead gen not enabled for this business' });
+  if (!biz.leadGen?.enabled) return res.status(400).json({ error: 'Lead gen not enabled' });
 
-  const leads = await searchRedditLeads(biz);
+  // Run all sources in parallel
+  const [redditLeads, craigslistLeads, webLeads] = await Promise.all([
+    searchRedditLeads(biz),
+    searchCraigslistLeads(biz),
+    searchWebLeads(biz)
+  ]);
 
-  if (leads.length === 0) {
-    return res.json({ found: 0, leads: [] });
-  }
+  const all = [
+    ...redditLeads.map(l  => ({ ...l, source: 'Reddit' })),
+    ...craigslistLeads.map(l => ({ ...l, source: 'Craigslist' })),
+    ...webLeads.map(l    => ({ ...l, source: 'Web' }))
+  ];
 
-  // Telegram notification
-  const lines = leads.map(l =>
-    `• <b>${l.title}</b> (r/${l.subreddit}, ${l.ageHours}h ago)\n  ${l.url}`
-  ).join('\n\n');
+  if (all.length === 0) return res.json({ found: 0, leads: [] });
 
-  const msg = `🎯 <b>Lead Gen Report — ${biz.name}</b>\n\nFound <b>${leads.length}</b> potential lead${leads.length>1?'s':''} on Reddit:\n\n${lines}\n\n<i>Reach out before your competitors do!</i>`;
+  // Group by source for Telegram
+  const sections = [];
+  if (redditLeads.length)     sections.push(`🗨️ <b>Reddit (${redditLeads.length})</b>\n` + redditLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
+  if (craigslistLeads.length) sections.push(`📌 <b>Craigslist (${craigslistLeads.length})</b>\n` + craigslistLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
+  if (webLeads.length)        sections.push(`🌐 <b>Web (${webLeads.length})</b>\n` + webLeads.map(l => `• ${l.title}\n  <a href="${l.url}">${l.url}</a>`).join('\n'));
+
+  const msg = `🎯 <b>Lead Gen — ${biz.name}</b>\n<b>${all.length} potential leads found</b>\n\n${sections.join('\n\n')}\n\n<i>Reach out before your competitors do!</i>`;
   await sendTelegram(msg);
 
-  res.json({ found: leads.length, leads });
+  res.json({ found: all.length, leads: all });
 });
 
 app.get('/api/leadgen/run/:businessId', async (req, res) => {
   const biz = getBusinesses()[req.params.businessId];
   if (!biz) return res.status(404).json({ error: 'Not found' });
-  const leads = await searchRedditLeads(biz);
-  res.json({ found: leads.length, leads });
+  const [redditLeads, craigslistLeads] = await Promise.all([
+    searchRedditLeads(biz), searchCraigslistLeads(biz)
+  ]);
+  const all = [...redditLeads, ...craigslistLeads];
+  res.json({ found: all.length, leads: all });
 });
 
 // ── Atlas personal chat ──────────────────────────────────────────────────────

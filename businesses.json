@@ -58,6 +58,10 @@
         "heat pump",
         "mini split"
       ],
+      "craigslistCity": "saltlakecity",
+      "location": "Salt Lake City Utah",
+      "serviceLabel": "HVAC heating cooling furnace",
+      "webSearchEnabled": true,
       "lookbackHours": 48
     }
   },
