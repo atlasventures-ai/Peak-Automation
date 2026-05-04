@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Peak Automation — Sales Pipeline</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#0a0a12; color:#e2e8f0; min-height:100vh; }
+
+  .topbar { background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); padding:18px 40px; display:flex; align-items:center; justify-content:space-between; }
+  .logo-text { font-size:18px; font-weight:800; letter-spacing:3px; background:linear-gradient(90deg,#4fc3f7,#00e5ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .nav-links { display:flex; gap:20px; }
+  .nav-links a { color:rgba(148,163,184,0.7); text-decoration:none; font-size:13px; font-weight:500; transition:color .2s; }
+  .nav-links a:hover, .nav-links a.active { color:#4fc3f7; }
+
+  .main { max-width:1200px; margin:0 auto; padding:40px; }
+  h2 { font-size:22px; font-weight:700; margin-bottom:6px; }
+  .subtitle { font-size:13px; color:rgba(148,163,184,0.6); margin-bottom:32px; }
+
+  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:32px; }
+  .stat { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; text-align:center; }
+  .stat-num { font-size:28px; font-weight:800; }
+  .stat-label { font-size:11px; color:rgba(148,163,184,0.5); margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
+
+  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
+  .column { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:16px; min-height:400px; }
+  .col-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .col-title { font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+  .col-count { background:rgba(255,255,255,0.08); border-radius:20px; padding:2px 8px; font-size:11px; color:rgba(148,163,184,0.6); }
+
+  .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px; margin-bottom:10px; cursor:pointer; transition:border-color .2s, transform .15s; }
+  .card:hover { border-color:rgba(79,195,247,0.3); transform:translateY(-1px); }
+  .card-name { font-size:13px; font-weight:700; color:#e2e8f0; margin-bottom:4px; }
+  .card-meta { font-size:11px; color:rgba(148,163,184,0.5); line-height:1.6; }
+  .card-niche { display:inline-flex; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:600; margin-top:6px; }
+  .card-actions { display:flex; gap:6px; margin-top:10px; }
+  .card-btn { flex:1; padding:5px 8px; border-radius:6px; border:none; font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .2s; }
+  .btn-advance { background:rgba(79,195,247,0.12); color:#4fc3f7; border:1px solid rgba(79,195,247,0.2); }
+  .btn-advance:hover { background:rgba(79,195,247,0.25); }
+  .btn-delete { background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.15); }
+  .btn-delete:hover { background:rgba(239,68,68,0.2); }
+
+  .add-form { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:24px; margin-top:32px; }
+  .add-form h3 { font-size:16px; font-weight:700; margin-bottom:16px; }
+  .form-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+  label { font-size:11px; color:rgba(148,163,184,0.6); letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:5px; }
+  input, select, textarea { width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 12px; color:#e2e8f0; font-size:13px; font-family:inherit; outline:none; transition:border-color .2s; }
+  input:focus, select:focus, textarea:focus { border-color:rgba(79,195,247,0.4); }
+  select option { background:#1a1a2e; }
+  .btn-add { background:linear-gradient(135deg,#0077ff,#00e5ff); color:white; border:none; border-radius:8px; padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+  .mrr-target { text-align:right; font-size:13px; color:rgba(148,163,184,0.5); margin-bottom:16px; }
+  .mrr-target strong { color:#86efac; font-size:16px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-text">⚡ PEAK AUTOMATION</div>
+  <nav class="nav-links">
+    <a href="/admin.html">Clients</a>
+    <a href="/pipeline.html" class="active">Pipeline</a>
+    <a href="/bookings.html">Bookings</a>
+    <a href="/leads.html">Leads</a>
+  </nav>
+</div>
+
+<div class="main">
+  <h2>Sales Pipeline</h2>
+  <p class="subtitle">Track every prospect from first contact to paying client.</p>
+
+  <div class="mrr-target">Monthly Recurring Revenue: <strong id="mrr-val">$0/mo</strong> &nbsp;·&nbsp; Goal: <strong style="color:#4fc3f7">$3,000/mo</strong></div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="s-identified" style="color:#94a3b8">0</div><div class="stat-label">Identified</div></div>
+    <div class="stat"><div class="stat-num" id="s-demo" style="color:#4fc3f7">0</div><div class="stat-label">Demo Built</div></div>
+    <div class="stat"><div class="stat-num" id="s-pitched" style="color:#fb923c">0</div><div class="stat-label">Pitched</div></div>
+    <div class="stat"><div class="stat-num" id="s-negotiating" style="color:#a78bfa">0</div><div class="stat-label">Negotiating</div></div>
+    <div class="stat"><div class="stat-num" id="s-client" style="color:#86efac">0</div><div class="stat-label">Active Clients</div></div>
+  </div>
+
+  <div class="board">
+    <div class="column">
+      <div class="col-header"><span class="col-title" style="color:#94a3b8">🔍 Identified</span><span class="col-count" id="cnt-identified">0</span></div>
+      <div id="col-identified"></div>
+    </div>
+    <div class="column">
+      <div class="col-header"><span class="col-title" style="color:#4fc3f7">🛠 Demo Built</span><span class="col-count" id="cnt-demo">0</span></div>
+      <div id="col-demo"></div>
+    </div>
+    <div class="column">
+      <div class="col-header"><span class="col-title" style="color:#fb923c">🚪 Pitched</span><span class="col-count" id="cnt-pitched">0</span></div>
+      <div id="col-pitched"></div>
+    </div>
+    <div class="column">
+      <div class="col-header"><span class="col-title" style="color:#a78bfa">🤝 Negotiating</span><span class="col-count" id="cnt-negotiating">0</span></div>
+      <div id="col-negotiating"></div>
+    </div>
+    <div class="column">
+      <div class="col-header"><span class="col-title" style="color:#86efac">✅ Active Client</span><span class="col-count" id="cnt-client">0</span></div>
+      <div id="col-client"></div>
+    </div>
+  </div>
+
+  <div class="add-form">
+    <h3>➕ Add Prospect</h3>
+    <div class="form-row">
+      <div><label>Business Name</label><input id="f-name" placeholder="Paradise HVAC" /></div>
+      <div><label>Contact Name</label><input id="f-contact" placeholder="Owner name" /></div>
+      <div><label>Phone / Email</label><input id="f-phone" placeholder="(801) 555-0100" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>Niche</label>
+        <select id="f-niche">
+          <option>HVAC</option><option>Plumbing</option><option>Electrical</option>
+          <option>Roofing</option><option>Auto Repair</option><option>Dental</option>
+          <option>Gym</option><option>Other</option>
+        </select>
+      </div>
+      <div><label>Stage</label>
+        <select id="f-stage">
+          <option value="identified">Identified</option>
+          <option value="demo">Demo Built</option>
+          <option value="pitched">Pitched</option>
+          <option value="negotiating">Negotiating</option>
+          <option value="client">Active Client</option>
+        </select>
+      </div>
+      <div><label>Website</label><input id="f-website" placeholder="example.com" /></div>
+    </div>
+    <div style="margin-bottom:12px"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Anything relevant — chatted with owner, has existing system, warm lead..."></textarea></div>
+    <button class="btn-add" onclick="addProspect()">Add to Pipeline</button>
+  </div>
+</div>
+
+<script>
+const STAGES = ['identified','demo','pitched','negotiating','client'];
+const STAGE_NEXT = { identified:'demo', demo:'pitched', pitched:'negotiating', negotiating:'client' };
+const NICHE_COLORS = {
+  HVAC:'#fb923c', Plumbing:'#4fc3f7', Electrical:'#fbbf24', Roofing:'#a78bfa',
+  'Auto Repair':'#86efac', Dental:'#f472b6', Gym:'#34d399', Other:'#94a3b8'
+};
+
+function getProspects() {
+  try { return JSON.parse(localStorage.getItem('pa_prospects') || '[]'); } catch { return []; }
+}
+function saveProspects(p) { localStorage.setItem('pa_prospects', JSON.stringify(p)); }
+
+function render() {
+  const prospects = getProspects();
+  const counts = { identified:0, demo:0, pitched:0, negotiating:0, client:0 };
+  let mrr = 0;
+
+  STAGES.forEach(s => { document.getElementById(`col-${s}`).innerHTML = ''; });
+
+  prospects.forEach((p, i) => {
+    counts[p.stage] = (counts[p.stage] || 0) + 1;
+    if (p.stage === 'client') mrr += 300;
+
+    const color = NICHE_COLORS[p.niche] || '#94a3b8';
+    const nextStage = STAGE_NEXT[p.stage];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-name">${p.name}</div>
+      <div class="card-meta">
+        ${p.contact ? `👤 ${p.contact}<br>` : ''}
+        ${p.phone ? `📱 ${p.phone}<br>` : ''}
+        ${p.website ? `🌐 ${p.website}<br>` : ''}
+        ${p.notes ? `📝 ${p.notes}` : ''}
+      </div>
+      <span class="card-niche" style="background:${color}22;color:${color};border:1px solid ${color}44">${p.niche}</span>
+      <div class="card-actions">
+        ${nextStage ? `<button class="card-btn btn-advance" onclick="advance(${i})">→ ${nextStage === 'demo' ? 'Demo Built' : nextStage === 'pitched' ? 'Pitched' : nextStage === 'negotiating' ? 'Negotiating' : '✅ Close!'}</button>` : '<button class="card-btn btn-advance" style="cursor:default;opacity:.5">🏆 Client</button>'}
+        <button class="card-btn btn-delete" onclick="remove(${i})">✕</button>
+      </div>
+    `;
+    document.getElementById(`col-${p.stage}`).appendChild(card);
+  });
+
+  STAGES.forEach(s => {
+    document.getElementById(`cnt-${s}`).textContent = counts[s] || 0;
+    document.getElementById(`s-${s}`).textContent   = counts[s] || 0;
+  });
+  document.getElementById('mrr-val').textContent = `$${mrr.toLocaleString()}/mo`;
+}
+
+function addProspect() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) return;
+  const prospects = getProspects();
+  prospects.unshift({
+    name,
+    contact:  document.getElementById('f-contact').value.trim(),
+    phone:    document.getElementById('f-phone').value.trim(),
+    niche:    document.getElementById('f-niche').value,
+    stage:    document.getElementById('f-stage').value,
+    website:  document.getElementById('f-website').value.trim(),
+    notes:    document.getElementById('f-notes').value.trim(),
+    addedAt:  new Date().toISOString()
+  });
+  saveProspects(prospects);
+  ['f-name','f-contact','f-phone','f-website','f-notes'].forEach(id => document.getElementById(id).value = '');
+  render();
+}
+
+function advance(i) {
+  const prospects = getProspects();
+  const next = STAGE_NEXT[prospects[i].stage];
+  if (next) { prospects[i].stage = next; saveProspects(prospects); render(); }
+}
+
+function remove(i) {
+  if (!confirm('Remove this prospect?')) return;
+  const prospects = getProspects();
+  prospects.splice(i, 1);
+  saveProspects(prospects);
+  render();
+}
+
+// Pre-load the hit list
+const HIT_LIST = [
+  { name:'Paradise Heating & Air', contact:'', phone:'(385) 303-9857', niche:'HVAC', stage:'demo', website:'getparadisehvac.com', notes:'Demo already built. Walk in this week.' },
+  { name:'Willden Family Dental', contact:'', phone:'(801) 446-4668', niche:'Dental', stage:'identified', website:'willdenfamilydental.com', notes:'830+ Google reviews, very busy, no chatbot.' },
+  { name:'Performance Place Auto', contact:'', phone:'', niche:'Auto Repair', stage:'identified', website:'performanceplace.com', notes:'South Jordan since 1974, family-owned.' },
+  { name:'Arches Roofing', contact:'', phone:'', niche:'Roofing', stage:'identified', website:'archesroofingutah.com', notes:'South Jordan local.' },
+  { name:'RG Plumbing', contact:'', phone:'(801) 446-0520', niche:'Plumbing', stage:'identified', website:'plumbingsouthjordanutah.com', notes:'Since 1985, basic website.' },
+  { name:'Ascend HVAC', contact:'', phone:'', niche:'HVAC', stage:'identified', website:'ascendhvac.com', notes:'SLC, small operation.' },
+];
+
+if (getProspects().length === 0) {
+  saveProspects(HIT_LIST.map(p => ({ ...p, addedAt: new Date().toISOString() })));
+}
+
+render();
+</script>
+</body>
+</html>

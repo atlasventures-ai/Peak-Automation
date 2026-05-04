@@ -28,7 +28,18 @@
         "label": "📍 Service Area",
         "text": "What areas do you serve?"
       }
-    ]
+    ],
+    "hours": {
+      "timezone": "America/Denver",
+      "mon": "8:00-18:00",
+      "tue": "8:00-18:00",
+      "wed": "8:00-18:00",
+      "thu": "8:00-18:00",
+      "fri": "8:00-18:00",
+      "sat": "9:00-15:00",
+      "sun": null,
+      "emergency": true
+    }
   },
   "peak-automation": {
     "id": "peak-automation",

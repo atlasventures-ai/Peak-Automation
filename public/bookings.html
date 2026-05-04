@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Peak Automation — Bookings & Conversations</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#0a0a12; color:#e2e8f0; min-height:100vh; }
+
+  .topbar { background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); padding:18px 40px; display:flex; align-items:center; justify-content:space-between; }
+  .logo-text { font-size:18px; font-weight:800; letter-spacing:3px; background:linear-gradient(90deg,#4fc3f7,#00e5ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .nav-links { display:flex; gap:20px; }
+  .nav-links a { color:rgba(148,163,184,0.7); text-decoration:none; font-size:13px; font-weight:500; transition:color .2s; }
+  .nav-links a:hover, .nav-links a.active { color:#4fc3f7; }
+
+  .main { max-width:1100px; margin:0 auto; padding:40px; }
+
+  .tabs { display:flex; gap:4px; margin-bottom:32px; background:rgba(255,255,255,0.04); border-radius:12px; padding:4px; width:fit-content; }
+  .tab { padding:8px 24px; border-radius:9px; border:none; background:transparent; color:rgba(148,163,184,0.6); font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; }
+  .tab.active { background:rgba(79,195,247,0.15); color:#4fc3f7; }
+
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px; }
+  .stat-num { font-size:32px; font-weight:800; color:#4fc3f7; }
+  .stat-label { font-size:12px; color:rgba(148,163,184,0.6); margin-top:4px; letter-spacing:.5px; }
+
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .item { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px 24px; margin-bottom:12px; }
+  .item-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+  .item-name { font-size:15px; font-weight:700; color:#e2e8f0; }
+  .item-meta { font-size:12px; color:rgba(148,163,184,0.5); margin-top:3px; }
+  .item-time { font-size:11px; color:rgba(148,163,184,0.4); text-align:right; white-space:nowrap; }
+  .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; margin-left:8px; }
+  .badge-green { background:rgba(134,239,172,0.12); color:#86efac; border:1px solid rgba(134,239,172,0.2); }
+  .badge-blue { background:rgba(79,195,247,0.12); color:#4fc3f7; border:1px solid rgba(79,195,247,0.2); }
+  .badge-orange { background:rgba(251,146,60,0.12); color:#fb923c; border:1px solid rgba(251,146,60,0.2); }
+
+  .booking-details { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
+  .detail { background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 12px; font-size:12px; }
+  .detail-label { color:rgba(148,163,184,0.5); font-size:10px; letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+  .detail-value { color:#e2e8f0; font-weight:600; }
+
+  .conv-messages { margin-top:12px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; display:none; }
+  .conv-messages.open { display:block; }
+  .msg { display:flex; gap:8px; margin-bottom:8px; font-size:12px; line-height:1.5; }
+  .msg-role { font-weight:700; min-width:60px; color:rgba(148,163,184,0.5); flex-shrink:0; }
+  .msg-role.user { color:#fb923c; }
+  .msg-role.bot { color:#4fc3f7; }
+  .msg-text { color:#cbd5e1; }
+  .toggle-conv { background:none; border:none; color:rgba(79,195,247,0.6); font-size:12px; cursor:pointer; font-family:inherit; margin-top:8px; }
+  .toggle-conv:hover { color:#4fc3f7; }
+
+  .empty { text-align:center; color:rgba(148,163,184,0.4); padding:60px 20px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-text">⚡ PEAK AUTOMATION</div>
+  <nav class="nav-links">
+    <a href="/admin.html">Clients</a>
+    <a href="/leads.html">Leads</a>
+    <a href="/bookings.html" class="active">Bookings</a>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="stat-bookings">—</div><div class="stat-label">Total Bookings</div></div>
+    <div class="stat"><div class="stat-num" id="stat-convs">—</div><div class="stat-label">Conversations</div></div>
+    <div class="stat"><div class="stat-num" id="stat-today">—</div><div class="stat-label">Today</div></div>
+    <div class="stat"><div class="stat-num" id="stat-rate">—</div><div class="stat-label">Booking Rate</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('bookings',this)">📅 Bookings</button>
+    <button class="tab" onclick="switchTab('conversations',this)">💬 Conversations</button>
+  </div>
+
+  <div id="panel-bookings" class="panel active"></div>
+  <div id="panel-conversations" class="panel"></div>
+</div>
+
+<script>
+const SERVER = window.location.origin;
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`panel-${name}`).classList.add('active');
+}
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+function isToday(iso) {
+  const d = new Date(iso);
+  const n = new Date();
+  return d.toDateString() === n.toDateString();
+}
+
+async function load() {
+  const [bookings, convs] = await Promise.all([
+    fetch(`${SERVER}/api/bookings`).then(r=>r.json()),
+    fetch(`${SERVER}/api/conversations`).then(r=>r.json())
+  ]);
+
+  // Stats
+  const todayBookings = bookings.filter(b => isToday(b.createdAt)).length;
+  const totalConvs = convs.length;
+  const bookingRate = totalConvs > 0 ? Math.round((bookings.length / totalConvs) * 100) : 0;
+  document.getElementById('stat-bookings').textContent = bookings.length;
+  document.getElementById('stat-convs').textContent    = totalConvs;
+  document.getElementById('stat-today').textContent    = todayBookings;
+  document.getElementById('stat-rate').textContent     = bookingRate + '%';
+
+  // Bookings panel
+  const bp = document.getElementById('panel-bookings');
+  if (bookings.length === 0) {
+    bp.innerHTML = '<div class="empty">No bookings yet. They\'ll show up here when the bot captures one.</div>';
+  } else {
+    bp.innerHTML = bookings.map(b => `
+      <div class="item">
+        <div class="item-top">
+          <div>
+            <div class="item-name">👤 ${b.name} <span class="badge badge-green">📅 Booking</span></div>
+            <div class="item-meta">🏢 ${b.businessName || b.businessId || '—'}</div>
+          </div>
+          <div class="item-time">${timeAgo(b.createdAt)}</div>
+        </div>
+        <div class="booking-details">
+          <div class="detail"><div class="detail-label">Phone</div><div class="detail-value">📱 ${b.phone || '—'}</div></div>
+          <div class="detail"><div class="detail-label">Service</div><div class="detail-value">🔧 ${b.service || '—'}</div></div>
+          <div class="detail"><div class="detail-label">Preferred Time</div><div class="detail-value">🕐 ${b.datetime || 'ASAP'}</div></div>
+          <div class="detail"><div class="detail-label">Captured</div><div class="detail-value">📆 ${new Date(b.createdAt).toLocaleString()}</div></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Conversations panel
+  const cp = document.getElementById('panel-conversations');
+  if (convs.length === 0) {
+    cp.innerHTML = '<div class="empty">No conversations yet. They save automatically when someone closes the chat.</div>';
+  } else {
+    cp.innerHTML = convs.map((c, i) => {
+      const userMsgs = c.messages?.filter(m => m.role === 'user') || [];
+      const firstMsg = userMsgs[0]?.content || 'No messages';
+      const dur = c.durationMs ? `${Math.round(c.durationMs/1000)}s` : '—';
+      const msgs = (c.messages || []).map(m => `
+        <div class="msg">
+          <span class="msg-role ${m.role === 'user' ? 'user' : 'bot'}">${m.role === 'user' ? 'Customer' : 'Bot'}</span>
+          <span class="msg-text">${m.content}</span>
+        </div>
+      `).join('');
+      return `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <div class="item-name">💬 ${c.businessName || c.businessId || 'Unknown'} ${c.hasBooking ? '<span class="badge badge-green">✅ Booked</span>' : ''}</div>
+              <div class="item-meta">${userMsgs.length} messages · ${dur} · "${firstMsg.slice(0,60)}${firstMsg.length>60?'...':''}"</div>
+            </div>
+            <div class="item-time">${timeAgo(c.savedAt)}</div>
+          </div>
+          <button class="toggle-conv" onclick="toggleConv(${i})">▼ View full conversation</button>
+          <div class="conv-messages" id="conv-${i}">${msgs}</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function toggleConv(i) {
+  const el  = document.getElementById(`conv-${i}`);
+  const btn = el.previousElementSibling;
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? '▲ Hide conversation' : '▼ View full conversation';
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

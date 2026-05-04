@@ -1,354 +1,357 @@
-(function () {
-  const script = document.currentScript;
-  const businessId = script?.getAttribute('data-business');
+(function() {
+  const script    = document.currentScript || document.querySelector('script[data-business]');
+  const bizId     = script?.getAttribute('data-business');
   const serverUrl = script?.getAttribute('data-server') || window.location.origin;
+  if (!bizId) return;
 
-  if (!businessId) { console.warn('[Atlas Widget] Missing data-business attribute'); return; }
+  let config      = null;
+  let history     = [];
+  let busy        = false;
+  let isOpen      = false;
+  let startTime   = Date.now();
+  let hasBooking  = false;
+  let convSaved   = false;
 
-  // Fetch business config then boot
-  fetch(`${serverUrl}/api/business/${businessId}`)
-    .then(r => r.json())
-    .then(biz => boot(biz, serverUrl))
-    .catch(err => console.warn('[Atlas Widget] Failed to load config:', err));
+  // ── Styles ──────────────────────────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    #pa-widget * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+    #pa-widget { position: fixed; bottom: 24px; right: 24px; z-index: 999999; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    #pa-fab { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); transition: transform .2s; }
+    #pa-fab:hover { transform: scale(1.1); }
+    #pa-badge { position: absolute; top: -3px; right: -3px; width: 18px; height: 18px; background: #dc2626; border-radius: 50%; border: 2px solid white; font-size: 10px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    #pa-fab-wrap { position: relative; }
+    #pa-bubble { background: white; border-radius: 14px 14px 4px 14px; padding: 12px 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.13); font-size: 13px; line-height: 1.5; max-width: 240px; border: 1px solid #e5e7eb; }
+    #pa-bubble strong { display: block; margin-bottom: 3px; font-size: 13px; }
+    #pa-bubble span { color: #6b7280; font-size: 12px; }
+    #pa-window { width: 360px; height: 500px; background: white; border-radius: 18px; box-shadow: 0 16px 60px rgba(0,0,0,0.18); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb; transform-origin: bottom right; }
+    #pa-window.pa-hidden { display: none; }
+    #pa-header { padding: 16px 18px; display: flex; align-items: center; gap: 11px; flex-shrink: 0; }
+    #pa-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0; }
+    #pa-info h4 { font-size: 14px; font-weight: 700; color: white; }
+    #pa-info span { font-size: 11px; color: rgba(255,255,255,0.8); display: flex; align-items: center; gap: 5px; }
+    .pa-dot { width: 6px; height: 6px; border-radius: 50%; background: #86efac; }
+    #pa-close { margin-left: auto; background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+    #pa-after-hours-bar { background: #fef3c7; border-bottom: 1px solid #fcd34d; padding: 8px 14px; font-size: 12px; color: #92400e; display: none; flex-shrink: 0; }
+    #pa-msgs { flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; }
+    #pa-msgs::-webkit-scrollbar { width: 4px; }
+    #pa-msgs::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+    .pa-bot-row { display: flex; gap: 8px; align-items: flex-end; }
+    .pa-bot-av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .pa-bot-bubble { background: white; border: 1px solid #e5e7eb; border-radius: 14px 14px 14px 4px; padding: 10px 13px; font-size: 13px; line-height: 1.6; color: #111827; max-width: 82%; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .pa-user-row { display: flex; justify-content: flex-end; }
+    .pa-user-bubble { border-radius: 14px 14px 4px 14px; padding: 10px 13px; font-size: 13px; line-height: 1.6; color: white; max-width: 82%; }
+    .pa-typing { display: flex; gap: 4px; padding: 6px 2px; }
+    .pa-typing span { width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; animation: pa-bounce 1.2s ease-in-out infinite; }
+    .pa-typing span:nth-child(2) { animation-delay: .2s; }
+    .pa-typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes pa-bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+    .pa-quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .pa-qr { background: white; border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; }
+    #pa-footer { padding: 12px 14px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; background: white; flex-shrink: 0; }
+    #pa-input { flex: 1; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 9px 12px; font-size: 13px; font-family: inherit; outline: none; color: #111827; background: #f9fafb; transition: border-color .2s; }
+    #pa-input:focus { border-color: var(--pa-primary, #3b82f6); background: white; }
+    #pa-send { width: 38px; height: 38px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: transform .15s; }
+    #pa-send:hover { transform: scale(1.1); }
+    .pa-booking-confirm { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 10px 13px; font-size: 12px; color: #166534; margin-top: 4px; }
+  `;
+  document.head.appendChild(style);
 
-  function boot(biz, server) {
-    const p  = biz.colors.primary;
-    const s  = biz.colors.secondary;
-
-    // ── Inject styles ──────────────────────────────────────────────────────
-    const style = document.createElement('style');
-    style.textContent = `
-      #atlas-widget * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
-      #atlas-widget {
-        position: fixed; bottom: 24px; right: 24px;
-        z-index: 999999;
-        display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
-      }
-      #atlas-fab {
-        width: 60px; height: 60px; border-radius: 50%;
-        background: linear-gradient(135deg, ${p}, ${s});
-        border: none; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 26px;
-        box-shadow: 0 6px 24px ${p}88;
-        transition: transform 0.2s;
-        position: relative;
-      }
-      #atlas-fab:hover { transform: scale(1.1); }
-      #atlas-fab-badge {
-        position: absolute; top: -3px; right: -3px;
-        width: 18px; height: 18px; background: #ef4444;
-        border-radius: 50%; border: 2px solid white;
-        font-size: 10px; color: white; font-weight: 700;
-        display: flex; align-items: center; justify-content: center;
-      }
-      #atlas-window {
-        width: 360px; height: 500px;
-        background: white; border-radius: 18px;
-        box-shadow: 0 16px 60px rgba(0,0,0,0.18);
-        display: flex; flex-direction: column; overflow: hidden;
-        border: 1px solid #e5e7eb;
-        animation: atlas-slide-up 0.3s cubic-bezier(0.34,1.56,0.64,1);
-        transform-origin: bottom right;
-      }
-      #atlas-window.atlas-hidden { display: none; }
-      @keyframes atlas-slide-up {
-        from { opacity: 0; transform: scale(0.85) translateY(16px); }
-        to   { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      #atlas-header {
-        background: linear-gradient(135deg, ${p}, ${s});
-        color: white; padding: 16px 18px;
-        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-      }
-      #atlas-avatar {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: rgba(255,255,255,0.2);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; border: 2px solid rgba(255,255,255,0.35);
-        flex-shrink: 0;
-      }
-      #atlas-header-info h4 { font-size: 14px; font-weight: 700; color: white; }
-      #atlas-header-info span {
-        font-size: 11px; opacity: 0.8;
-        display: flex; align-items: center; gap: 4px; color: white;
-      }
-      .atlas-online-dot {
-        width: 7px; height: 7px; border-radius: 50%;
-        background: #86efac; box-shadow: 0 0 5px #86efac;
-        animation: atlas-blink 2s infinite;
-      }
-      @keyframes atlas-blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-      #atlas-close {
-        margin-left: auto;
-        background: rgba(255,255,255,0.18); border: none;
-        color: white; width: 28px; height: 28px;
-        border-radius: 50%; cursor: pointer; font-size: 14px;
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.2s;
-      }
-      #atlas-close:hover { background: rgba(255,255,255,0.3); }
-      #atlas-messages {
-        flex: 1; overflow-y: auto;
-        padding: 16px 14px;
-        display: flex; flex-direction: column; gap: 12px;
-        background: #f9fafb;
-      }
-      #atlas-messages::-webkit-scrollbar { width: 3px; }
-      #atlas-messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-      .atlas-bot-row { display: flex; gap: 8px; align-items: flex-start; }
-      .atlas-bot-av {
-        width: 28px; height: 28px; border-radius: 50%;
-        background: linear-gradient(135deg, ${p}, ${s});
-        display: flex; align-items: center; justify-content: center;
-        font-size: 14px; flex-shrink: 0;
-      }
-      .atlas-bot-bubble {
-        background: white; border: 1px solid #e5e7eb;
-        border-radius: 14px 14px 14px 4px;
-        padding: 10px 13px; font-size: 13px;
-        line-height: 1.6; color: #111827; max-width: 86%;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        animation: atlas-msg 0.25s ease;
-        white-space: pre-wrap; word-break: break-word;
-      }
-      .atlas-user-row { display: flex; justify-content: flex-end; animation: atlas-msg 0.25s ease; }
-      .atlas-user-bubble {
-        background: linear-gradient(135deg, ${p}, ${s});
-        color: white; border-radius: 14px 14px 4px 14px;
-        padding: 10px 13px; font-size: 13px;
-        line-height: 1.6; max-width: 86%;
-      }
-      @keyframes atlas-msg { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-      .atlas-typing-row { display: flex; gap: 8px; align-items: flex-start; }
-      .atlas-typing-bubble {
-        background: white; border: 1px solid #e5e7eb;
-        border-radius: 14px 14px 14px 4px;
-        padding: 12px 14px; display: flex; gap: 4px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-      }
-      .atlas-typing-bubble span {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: #9ca3af; animation: atlas-bounce 1.2s ease-in-out infinite;
-      }
-      .atlas-typing-bubble span:nth-child(2) { animation-delay: .2s; }
-      .atlas-typing-bubble span:nth-child(3) { animation-delay: .4s; }
-      @keyframes atlas-bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
-      .atlas-quick-replies { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
-      .atlas-qr {
-        background: white; border: 1.5px solid ${p};
-        color: ${p}; border-radius: 18px;
-        padding: 5px 12px; font-size: 11px; font-weight: 600;
-        cursor: pointer; transition: all 0.2s; font-family: inherit;
-      }
-      .atlas-qr:hover { background: ${p}; color: white; }
-      #atlas-footer {
-        padding: 12px 14px; border-top: 1px solid #e5e7eb;
-        display: flex; gap: 8px; background: white; flex-shrink: 0;
-      }
-      #atlas-input {
-        flex: 1; border: 1.5px solid #e5e7eb;
-        border-radius: 10px; padding: 9px 12px;
-        font-size: 13px; font-family: inherit;
-        outline: none; color: #111827;
-        background: #f9fafb; transition: border-color 0.2s;
-      }
-      #atlas-input:focus { border-color: ${p}; background: white; }
-      #atlas-input::placeholder { color: #9ca3af; }
-      #atlas-send {
-        width: 38px; height: 38px; border-radius: 10px;
-        background: linear-gradient(135deg, ${p}, ${s});
-        border: none; cursor: pointer; color: white;
-        font-size: 15px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        transition: transform 0.15s;
-        box-shadow: 0 3px 10px ${p}55;
-      }
-      #atlas-send:hover { transform: scale(1.07); }
-      #atlas-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-      #atlas-powered {
-        text-align: center; font-size: 10px;
-        color: #9ca3af; padding: 5px 0 3px;
-        background: white; letter-spacing: 0.3px;
-      }
-      #atlas-powered a { color: ${p}; text-decoration: none; font-weight: 600; }
-    `;
-    document.head.appendChild(style);
-
-    // ── Build HTML ─────────────────────────────────────────────────────────
-    const widget = document.createElement('div');
-    widget.id = 'atlas-widget';
-    widget.innerHTML = `
-      <div id="atlas-window" class="atlas-hidden">
-        <div id="atlas-header">
-          <div id="atlas-avatar">${biz.icon}</div>
-          <div id="atlas-header-info">
-            <h4>${biz.name}</h4>
-            <span><div class="atlas-online-dot"></div> Online · Replies instantly</span>
-          </div>
-          <button id="atlas-close">✕</button>
-        </div>
-        <div id="atlas-messages"></div>
-        <div id="atlas-footer">
-          <input id="atlas-input" placeholder="Type a message..." />
-          <button id="atlas-send">➤</button>
-        </div>
-        <div id="atlas-powered">Powered by <a href="https://atlasaiautomation.com" target="_blank">Atlas AI Automation</a> ⚡</div>
+  // ── HTML ────────────────────────────────────────────────────────────────────
+  const wrap = document.createElement('div');
+  wrap.id = 'pa-widget';
+  wrap.innerHTML = `
+    <div id="pa-bubble"><strong>👋 Questions? We're here!</strong><span>Tap to chat — takes 30 seconds</span></div>
+    <div id="pa-fab-wrap">
+      <button id="pa-fab">💬</button>
+      <div id="pa-badge">1</div>
+    </div>
+    <div id="pa-window" class="pa-hidden">
+      <div id="pa-header">
+        <div id="pa-avatar">🤖</div>
+        <div id="pa-info"><h4>Assistant</h4><span><span class="pa-dot"></span> Online</span></div>
+        <button id="pa-close">✕</button>
       </div>
-      <button id="atlas-fab">
-        <span id="atlas-fab-icon">💬</span>
-        <div id="atlas-fab-badge">1</div>
-      </button>
-    `;
-    document.body.appendChild(widget);
+      <div id="pa-after-hours-bar">🌙 We're closed right now — leave your info and we'll call you back!</div>
+      <div id="pa-msgs"></div>
+      <div id="pa-footer">
+        <input id="pa-input" type="text" placeholder="Type a message..." />
+        <button id="pa-send">➤</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
 
-    // ── State & refs ───────────────────────────────────────────────────────
-    const win     = document.getElementById('atlas-window');
-    const msgs    = document.getElementById('atlas-messages');
-    const input   = document.getElementById('atlas-input');
-    const send    = document.getElementById('atlas-send');
-    const fab     = document.getElementById('atlas-fab');
-    const fabIcon = document.getElementById('atlas-fab-icon');
-    const badge   = document.getElementById('atlas-fab-badge');
-    const closeBtn = document.getElementById('atlas-close');
+  const fabEl       = document.getElementById('pa-fab');
+  const badgeEl     = document.getElementById('pa-badge');
+  const bubbleEl    = document.getElementById('pa-bubble');
+  const windowEl    = document.getElementById('pa-window');
+  const msgsEl      = document.getElementById('pa-msgs');
+  const inputEl     = document.getElementById('pa-input');
+  const sendEl      = document.getElementById('pa-send');
+  const closeEl     = document.getElementById('pa-close');
+  const afterHoursEl = document.getElementById('pa-after-hours-bar');
+  const headerEl    = document.getElementById('pa-header');
+  const avatarEl    = document.getElementById('pa-avatar');
+  const infoEl      = document.getElementById('pa-info');
 
-    let history = [], busy = false, open = false;
+  // ── Load config + hours ──────────────────────────────────────────────────────
+  async function init() {
+    try {
+      const [bizRes, hoursRes] = await Promise.all([
+        fetch(`${serverUrl}/api/business/${bizId}`),
+        fetch(`${serverUrl}/api/hours/${bizId}`)
+      ]);
+      config = await bizRes.json();
+      const hours = await hoursRes.json();
 
-    // ── Greeting ───────────────────────────────────────────────────────────
-    function showGreeting() {
-      const row = document.createElement('div');
-      row.className = 'atlas-bot-row';
-      row.innerHTML = `<div class="atlas-bot-av">${biz.icon}</div><div></div>`;
-      const wrap = row.querySelector('div:last-child');
-      const bubble = document.createElement('div');
-      bubble.className = 'atlas-bot-bubble';
-      bubble.textContent = biz.greeting;
-      wrap.appendChild(bubble);
+      const primary   = config.colors?.primary   || '#3b82f6';
+      const secondary = config.colors?.secondary || '#2563eb';
+      const headerTxt = config.colors?.headerText || '#ffffff';
 
-      if (biz.quickReplies?.length) {
-        const qrs = document.createElement('div');
-        qrs.className = 'atlas-quick-replies';
-        qrs.id = 'atlas-qr-container';
-        biz.quickReplies.forEach(qr => {
-          const btn = document.createElement('button');
-          btn.className = 'atlas-qr';
-          btn.textContent = qr.label;
-          btn.addEventListener('click', () => {
-            document.getElementById('atlas-qr-container')?.remove();
-            input.value = qr.text;
-            sendMsg();
-          });
-          qrs.appendChild(btn);
-        });
-        wrap.appendChild(qrs);
-      }
-      msgs.appendChild(row);
-    }
+      // Apply branding
+      document.documentElement.style.setProperty('--pa-primary', primary);
+      headerEl.style.background  = `linear-gradient(135deg, ${primary}, ${secondary})`;
+      fabEl.style.background     = `linear-gradient(135deg, ${primary}, ${secondary})`;
+      fabEl.style.color          = headerTxt;
+      sendEl.style.background    = primary;
+      sendEl.style.color         = headerTxt;
+      avatarEl.textContent       = config.icon || '🤖';
+      avatarEl.style.background  = `rgba(255,255,255,0.2)`;
 
-    // ── Toggle ─────────────────────────────────────────────────────────────
-    function openWidget() {
-      open = true;
-      win.classList.remove('atlas-hidden');
-      fabIcon.textContent = '✕';
-      badge.style.display = 'none';
-      if (msgs.children.length === 0) showGreeting();
-      setTimeout(() => input.focus(), 100);
-    }
+      document.getElementById('pa-info').querySelector('h4').textContent = config.name || 'Assistant';
 
-    function closeWidget() {
-      open = false;
-      win.classList.add('atlas-hidden');
-      fabIcon.textContent = '💬';
-    }
-
-    fab.addEventListener('click', () => open ? closeWidget() : openWidget());
-    closeBtn.addEventListener('click', closeWidget);
-
-    // ── Chat ───────────────────────────────────────────────────────────────
-    function addBot(text = '') {
-      const row = document.createElement('div');
-      row.className = 'atlas-bot-row';
-      const bubble = document.createElement('div');
-      bubble.className = 'atlas-bot-bubble';
-      row.innerHTML = `<div class="atlas-bot-av">${biz.icon}</div>`;
-      if (text) bubble.textContent = text;
-      row.appendChild(bubble);
-      msgs.appendChild(row);
-      msgs.scrollTop = msgs.scrollHeight;
-      return bubble;
-    }
-
-    function addUser(text) {
-      const row = document.createElement('div');
-      row.className = 'atlas-user-row';
-      row.innerHTML = `<div class="atlas-user-bubble">${text}</div>`;
-      msgs.appendChild(row);
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-
-    function addTyping() {
-      const row = document.createElement('div');
-      row.className = 'atlas-typing-row';
-      row.innerHTML = `<div class="atlas-bot-av">${biz.icon}</div><div class="atlas-typing-bubble"><span></span><span></span><span></span></div>`;
-      msgs.appendChild(row);
-      msgs.scrollTop = msgs.scrollHeight;
-      return row;
-    }
-
-    async function sendMsg() {
-      const text = input.value.trim();
-      if (!text || busy) return;
-      busy = true;
-      send.disabled = true;
-      input.value = '';
-      addUser(text);
-      history.push({ role: 'user', content: text });
-      const typing = addTyping();
-
-      try {
-        const res = await fetch(`${server}/api/chat/${biz.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history }),
-        });
-
-        typing.remove();
-        const bubble = addBot();
-        let full = '';
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop();
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            try {
-              const evt = JSON.parse(line.slice(6));
-              if (evt.type === 'text') { full += evt.text; bubble.textContent = full; msgs.scrollTop = msgs.scrollHeight; }
-            } catch {}
-          }
+      // After-hours banner
+      if (!hours.open) {
+        afterHoursEl.style.display = 'block';
+        if (hours.emergency) {
+          afterHoursEl.textContent = '🚨 We\'re closed but emergency service is available — chat now!';
+          afterHoursEl.style.background = '#fef2f2';
+          afterHoursEl.style.borderColor = '#fca5a5';
+          afterHoursEl.style.color = '#991b1b';
         }
-        history.push({ role: 'assistant', content: full });
-
-      } catch {
-        typing.remove();
-        addBot('Sorry, something went wrong. Please contact us directly.');
       }
 
-      busy = false;
-      send.disabled = false;
-      input.focus();
+      // Style quick replies
+      document.querySelectorAll('.pa-qr').forEach(btn => {
+        btn.style.border = `1.5px solid ${primary}`;
+        btn.style.color  = primary;
+        btn.addEventListener('mouseenter', () => { btn.style.background = primary; btn.style.color = '#fff'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'white'; btn.style.color = primary; });
+      });
+
+    } catch(e) {
+      console.error('Widget init error:', e);
+    }
+  }
+
+  // ── Greeting ─────────────────────────────────────────────────────────────────
+  function showGreeting() {
+    if (!config) return;
+    const row = document.createElement('div');
+    row.className = 'pa-bot-row';
+    const primary = config.colors?.primary || '#3b82f6';
+    const secondary = config.colors?.secondary || '#2563eb';
+    row.innerHTML = `
+      <div class="pa-bot-av" style="background:linear-gradient(135deg,${primary},${secondary});color:#fff;">${config.icon || '🤖'}</div>
+      <div>
+        <div class="pa-bot-bubble">${config.greeting || 'Hi! How can I help you today?'}</div>
+        <div class="pa-quick-replies">
+          ${(config.quickReplies || []).map(qr => `<button class="pa-qr" onclick="paQuickSend(this,'${qr.text.replace(/'/g,"\\\'")}')">${qr.label}</button>`).join('')}
+        </div>
+      </div>
+    `;
+    msgsEl.appendChild(row);
+    const primary2 = config.colors?.primary || '#3b82f6';
+    row.querySelectorAll('.pa-qr').forEach(btn => {
+      btn.style.border = `1.5px solid ${primary2}`;
+      btn.style.color  = primary2;
+      btn.addEventListener('mouseenter', () => { btn.style.background = primary2; btn.style.color = '#fff'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = 'white'; btn.style.color = primary2; });
+    });
+  }
+
+  window.paQuickSend = function(btn, text) {
+    document.querySelectorAll('.pa-quick-replies').forEach(el => el.remove());
+    inputEl.value = text;
+    send();
+  };
+
+  // ── Toggle widget ─────────────────────────────────────────────────────────────
+  function openWidget() {
+    isOpen = true;
+    windowEl.classList.remove('pa-hidden');
+    bubbleEl.style.display = 'none';
+    badgeEl.style.display  = 'none';
+    fabEl.textContent = '✕';
+    startTime = Date.now();
+    if (msgsEl.children.length === 0) showGreeting();
+    inputEl.focus();
+  }
+
+  function closeWidget() {
+    isOpen = false;
+    windowEl.classList.add('pa-hidden');
+    fabEl.textContent = '💬';
+    saveConversation();
+  }
+
+  fabEl.addEventListener('click',  () => isOpen ? closeWidget() : openWidget());
+  closeEl.addEventListener('click', closeWidget);
+
+  // ── Booking detection ─────────────────────────────────────────────────────────
+  function detectBooking(text) {
+    const match = text.match(/\[BOOKING:([^\]]+)\]/);
+    if (!match) return null;
+    const [name, phone, service, datetime] = match[1].split('|');
+    return { name: name?.trim(), phone: phone?.trim(), service: service?.trim(), datetime: datetime?.trim() };
+  }
+
+  async function submitBooking(booking) {
+    hasBooking = true;
+    try {
+      await fetch(`${serverUrl}/api/booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...booking, businessId: bizId })
+      });
+      // Show confirmation badge in chat
+      const confirm = document.createElement('div');
+      confirm.className = 'pa-booking-confirm';
+      confirm.textContent = '✅ Booking request captured! Someone will call you to confirm.';
+      msgsEl.appendChild(confirm);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    } catch(e) { console.error('Booking submit error:', e); }
+  }
+
+  // ── Save conversation log ─────────────────────────────────────────────────────
+  async function saveConversation() {
+    if (convSaved || history.length < 2) return;
+    convSaved = true;
+    try {
+      await fetch(`${serverUrl}/api/conversation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: bizId,
+          messages: history,
+          durationMs: Date.now() - startTime,
+          hasBooking
+        })
+      });
+    } catch(e) { console.error('Conv save error:', e); }
+  }
+
+  // Save on page unload
+  window.addEventListener('beforeunload', saveConversation);
+
+  // ── Add message bubbles ───────────────────────────────────────────────────────
+  function addBot(text) {
+    const primary   = config?.colors?.primary   || '#3b82f6';
+    const secondary = config?.colors?.secondary || '#2563eb';
+    const row = document.createElement('div');
+    row.className = 'pa-bot-row';
+    row.innerHTML = `<div class="pa-bot-av" style="background:linear-gradient(135deg,${primary},${secondary});color:#fff;">${config?.icon || '🤖'}</div><div class="pa-bot-bubble"></div>`;
+    msgsEl.appendChild(row);
+    const bubble = row.querySelector('.pa-bot-bubble');
+    if (text) bubble.textContent = text;
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    return bubble;
+  }
+
+  function addUser(text) {
+    const primary = config?.colors?.primary || '#3b82f6';
+    const row = document.createElement('div');
+    row.className = 'pa-user-row';
+    row.innerHTML = `<div class="pa-user-bubble" style="background:linear-gradient(135deg,${primary},${config?.colors?.secondary||primary})">${text}</div>`;
+    msgsEl.appendChild(row);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  function addTyping() {
+    const primary   = config?.colors?.primary   || '#3b82f6';
+    const secondary = config?.colors?.secondary || '#2563eb';
+    const row = document.createElement('div');
+    row.className = 'pa-bot-row';
+    row.innerHTML = `<div class="pa-bot-av" style="background:linear-gradient(135deg,${primary},${secondary});color:#fff;">${config?.icon || '🤖'}</div><div class="pa-bot-bubble"><div class="pa-typing"><span></span><span></span><span></span></div></div>`;
+    msgsEl.appendChild(row);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    return row;
+  }
+
+  // ── Send message ──────────────────────────────────────────────────────────────
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text || busy) return;
+    busy = true;
+    sendEl.disabled = true;
+    inputEl.value = '';
+    document.querySelectorAll('.pa-quick-replies').forEach(el => el.remove());
+    addUser(text);
+    history.push({ role: 'user', content: text });
+    const typingRow = addTyping();
+
+    try {
+      const res = await fetch(`${serverUrl}/api/chat/${bizId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history })
+      });
+
+      typingRow.remove();
+      const bubble = addBot();
+      let full = '';
+      let displayText = '';
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6));
+            if (evt.type === 'text') {
+              full += evt.text;
+              // Strip [BOOKING:...] from display
+              displayText = full.replace(/\[BOOKING:[^\]]*\]/g, '').trim();
+              bubble.textContent = displayText;
+              msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+          } catch {}
+        }
+      }
+
+      // Check for booking tag
+      const booking = detectBooking(full);
+      if (booking) {
+        await submitBooking(booking);
+        convSaved = false; // allow re-save with booking flag
+      }
+
+      history.push({ role: 'assistant', content: displayText });
+
+    } catch (err) {
+      typingRow.remove();
+      addBot('Sorry, something went wrong. Please call us directly. 📞');
     }
 
-    send.addEventListener('click', sendMsg);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
-
-    // Auto-open after 5s
-    setTimeout(() => { if (!open) openWidget(); }, 5000);
+    busy = false;
+    sendEl.disabled = false;
+    inputEl.focus();
   }
+
+  sendEl.addEventListener('click', send);
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+
+  // ── Auto-open after 5 seconds ─────────────────────────────────────────────────
+  setTimeout(() => { if (!isOpen) openWidget(); }, 5000);
+
+  init();
 })();
