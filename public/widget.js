@@ -96,12 +96,26 @@
   const infoEl      = document.getElementById('pa-info');
 
   // ── Load config + hours ──────────────────────────────────────────────────────
+  function showFallback() {
+    // Server is down — show a call-us button instead of broken chat
+    fabEl.style.display = 'none';
+    bubbleEl.style.display = 'none';
+    const fallback = document.createElement('div');
+    fallback.id = 'pa-fallback';
+    fallback.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;background:white;border-radius:14px;padding:14px 18px;box-shadow:0 6px 24px rgba(0,0,0,0.15);font-family:Segoe UI,Arial,sans-serif;font-size:13px;border:1px solid #e5e7eb;max-width:220px;';
+    fallback.innerHTML = `<strong style="color:#111;display:block;margin-bottom:4px">📞 Questions?</strong><span style="color:#666;font-size:12px">Give us a call — we'd love to help!</span>`;
+    document.body.appendChild(fallback);
+  }
+
   async function init() {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
       const [bizRes, hoursRes] = await Promise.all([
-        fetch(`${serverUrl}/api/business/${bizId}`),
-        fetch(`${serverUrl}/api/hours/${bizId}`)
+        fetch(`${serverUrl}/api/business/${bizId}`, { signal: controller.signal }),
+        fetch(`${serverUrl}/api/hours/${bizId}`, { signal: controller.signal })
       ]);
+      clearTimeout(timeout);
       config = await bizRes.json();
       const hours = await hoursRes.json();
 
@@ -142,6 +156,7 @@
 
     } catch(e) {
       console.error('Widget init error:', e);
+      showFallback();
     }
   }
 
